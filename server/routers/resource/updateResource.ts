@@ -90,6 +90,12 @@ const updateHttpResourceBodySchema = z
         domainId: z.string().optional(),
         enabled: z.boolean().optional(),
         stickySession: z.boolean().optional(),
+        loadBalancingStrategy: z
+            .enum(["wrr", "p2c", "hrw", "leasttime"])
+            .optional()
+            .describe(
+                "How requests are distributed across targets: wrr (weighted round robin, default), p2c (power of two choices), hrw (highest random weight / client IP hashing), leasttime (lowest response time)."
+            ),
         tlsServerName: z.string().nullable().optional(),
         setHostHeader: z.string().nullable().optional(),
         skipToIdpId: z

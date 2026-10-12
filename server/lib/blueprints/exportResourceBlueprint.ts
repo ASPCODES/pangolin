@@ -410,6 +410,13 @@ export async function generatePublicResourceBlueprintYaml(
     if (resource.tlsServerName) {
         resourceConfig["tls-server-name"] = resource.tlsServerName;
     }
+    if (
+        resource.loadBalancingStrategy &&
+        resource.loadBalancingStrategy !== "wrr"
+    ) {
+        resourceConfig["load-balancing-strategy"] =
+            resource.loadBalancingStrategy;
+    }
     if (resource.requestHeaders) {
         try {
             resourceConfig.requestHeaders = JSON.parse(resource.requestHeaders);

@@ -197,6 +197,10 @@ export const resources = sqliteTable(
         stickySession: integer("stickySession", { mode: "boolean" })
             .notNull()
             .default(false),
+        loadBalancingStrategy: text("loadBalancingStrategy")
+            .$type<"wrr" | "p2c" | "hrw" | "leasttime">()
+            .notNull()
+            .default("wrr"), // traefik http loadBalancer.strategy
         tlsServerName: text("tlsServerName"),
         setHostHeader: text("setHostHeader"),
         enableProxy: integer("enableProxy", { mode: "boolean" }).default(true),

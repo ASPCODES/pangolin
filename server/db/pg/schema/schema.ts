@@ -181,6 +181,10 @@ export const resources = pgTable(
         applyRules: boolean("applyRules"),
         enabled: boolean("enabled").notNull().default(true),
         stickySession: boolean("stickySession").notNull().default(false),
+        loadBalancingStrategy: varchar("loadBalancingStrategy", { length: 32 })
+            .$type<"wrr" | "p2c" | "hrw" | "leasttime">()
+            .notNull()
+            .default("wrr"), // traefik http loadBalancer.strategy
         tlsServerName: varchar("tlsServerName"),
         setHostHeader: varchar("setHostHeader"),
         enableProxy: boolean("enableProxy").default(true),

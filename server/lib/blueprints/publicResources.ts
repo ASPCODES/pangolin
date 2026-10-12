@@ -424,6 +424,9 @@ export async function updatePublicResources(
                             setHostHeader: resourceData["host-header"] || null,
                             tlsServerName:
                                 resourceData["tls-server-name"] || null,
+                            loadBalancingStrategy:
+                                resourceData["load-balancing-strategy"] ??
+                                "wrr",
                             emailWhitelistEnabled: resourceData.auth?.[
                                 "whitelist-users"
                             ]
@@ -628,6 +631,9 @@ export async function updatePublicResources(
                             setHostHeader: resourceData["host-header"] || null,
                             tlsServerName:
                                 resourceData["tls-server-name"] || null,
+                            loadBalancingStrategy:
+                                resourceData["load-balancing-strategy"] ??
+                                "wrr",
                             requestHeaders,
                             responseHeaders,
                             maintenanceModeEnabled:
@@ -1260,6 +1266,8 @@ export async function updatePublicResources(
                     enabled: resourceEnabled,
                     setHostHeader: resourceData["host-header"] || null,
                     tlsServerName: resourceData["tls-server-name"] || null,
+                    loadBalancingStrategy:
+                        resourceData["load-balancing-strategy"] ?? "wrr",
                     ssl: resourceSsl,
                     requestHeaders,
                     responseHeaders,

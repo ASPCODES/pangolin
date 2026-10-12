@@ -2,6 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@app/components/ui/select";
 import { HeadersInput } from "@app/components/HeadersInput";
 import {
     SettingsContainer,
@@ -44,6 +51,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useActionState, useState, startTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
+const LOAD_BALANCING_STRATEGIES = ["wrr", "p2c", "hrw", "leasttime"] as const;
 
 export default function ReverseProxyTargetsPage() {
     const params = useParams();
@@ -90,6 +99,7 @@ function ProxyResourceHttpForm({
 
     const httpSettingsSchema = z.object({
         stickySession: z.boolean(),
+        loadBalancingStrategy: z.enum(LOAD_BALANCING_STRATEGIES),
         ssl: z.boolean(),
         tlsServerName: z
             .string()
@@ -131,6 +141,7 @@ function ProxyResourceHttpForm({
         resolver: zodResolver(httpSettingsSchema),
         defaultValues: {
             stickySession: resource.stickySession,
+            loadBalancingStrategy: resource.loadBalancingStrategy,
             ssl: resource.ssl,
             tlsServerName: resource.tlsServerName || "",
             setHostHeader: resource.setHostHeader || "",
@@ -164,6 +175,7 @@ function ProxyResourceHttpForm({
                 `/resource/${resource.resourceId}`,
                 {
                     stickySession: data.stickySession,
+                    loadBalancingStrategy: data.loadBalancingStrategy,
                     ssl: data.ssl,
                     tlsServerName: data.tlsServerName || null,
                     setHostHeader: data.setHostHeader || null,
@@ -186,6 +198,7 @@ function ProxyResourceHttpForm({
             updateResource({
                 ...resource,
                 stickySession: data.stickySession,
+                loadBalancingStrategy: data.loadBalancingStrategy,
                 ssl: data.ssl,
                 tlsServerName: data.tlsServerName || null,
                 setHostHeader: data.setHostHeader || null,
@@ -300,6 +313,58 @@ function ProxyResourceHttpForm({
                                                         }
                                                     />
                                                 </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </SettingsFormCell>
+
+                                <SettingsFormCell span="half">
+                                    <FormField
+                                        control={form.control}
+                                        name="loadBalancingStrategy"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    {t(
+                                                        "loadBalancingStrategy"
+                                                    )}
+                                                </FormLabel>
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {LOAD_BALANCING_STRATEGIES.map(
+                                                            (strategy) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        strategy
+                                                                    }
+                                                                    value={
+                                                                        strategy
+                                                                    }
+                                                                >
+                                                                    {t(
+                                                                        `loadBalancingStrategy_${strategy}`
+                                                                    )}
+                                                                </SelectItem>
+                                                            )
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormDescription>
+                                                    {t(
+                                                        `loadBalancingStrategy_${field.value}_description`
+                                                    )}
+                                                </FormDescription>
+                                                <FormMessage />
                                             </FormItem>
                                         )}
                                     />

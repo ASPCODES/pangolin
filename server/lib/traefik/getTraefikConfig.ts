@@ -30,6 +30,7 @@ import { buildWildcardTls } from "./certResolver";
 import { buildHostRule, appendPathMatch, computeRoutePriority } from "./rule";
 import {
     buildHttpLoadBalancerServers,
+    buildLoadBalancingStrategy,
     buildStickySessionCookie,
     buildTcpUdpLoadBalancerServers,
     buildStickySessionIp
@@ -93,6 +94,7 @@ export async function getTraefikConfig(
             domainId: resources.domainId,
             enabled: resources.enabled,
             stickySession: resources.stickySession,
+            loadBalancingStrategy: resources.loadBalancingStrategy,
             tlsServerName: resources.tlsServerName,
             setHostHeader: resources.setHostHeader,
             enableProxy: resources.enableProxy,
@@ -222,6 +224,7 @@ export async function getTraefikConfig(
                 domainId: row.domainId,
                 enabled: row.enabled,
                 stickySession: row.stickySession,
+                loadBalancingStrategy: row.loadBalancingStrategy,
                 tlsServerName: row.tlsServerName,
                 setHostHeader: row.setHostHeader,
                 enableProxy: row.enableProxy,
@@ -458,6 +461,9 @@ export async function getTraefikConfig(
             config_output.http.services![serviceName] = {
                 loadBalancer: {
                     servers: buildHttpLoadBalancerServers(targets),
+                    ...buildLoadBalancingStrategy(
+                        resource.loadBalancingStrategy
+                    ),
                     ...(resource.stickySession
                         ? buildStickySessionCookie(resource.ssl)
                         : {})

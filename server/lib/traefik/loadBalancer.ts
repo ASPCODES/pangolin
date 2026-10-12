@@ -63,6 +63,18 @@ export function buildHttpLoadBalancerServers(targets: TargetWithSite[]) {
         );
 }
 
+/**
+ * Build the loadBalancer.strategy for an HTTP-mode resource. Traefik defaults
+ * to wrr when strategy is omitted, so only emit it for the non-default
+ * strategies to keep the generated config unchanged for existing resources.
+ */
+export function buildLoadBalancingStrategy(strategy: string | null) {
+    if (!strategy || strategy === "wrr") {
+        return {};
+    }
+    return { strategy };
+}
+
 export function buildStickySessionCookie(ssl: boolean | null) {
     return {
         sticky: {
