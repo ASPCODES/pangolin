@@ -4,6 +4,12 @@
 // leading apostrophe is prefixed to force the cell to be read as literal text.
 const FORMULA_PREFIX = /^[=+\-@\t\r]/;
 
+// A leading "-" alone is not dangerous when the rest of the value is just a
+// number: spreadsheets read -12 as a number, not a formula. Only values like
+// "-2+3+cmd|'/c calc'!A0" (a DDE payload) actually need neutralising, so
+// plain negative numbers stay numeric instead of being forced to text.
+const NEGATIVE_NUMBER = /^-\d+(\.\d+)?$/;
+
 // CRLF, CR and LF each terminate a record for at least one CSV parser, so a
 // value containing them would otherwise spill across rows and forge new ones.
 // Replacing them with a literal "\n" keeps every record on a single line.
@@ -24,7 +30,10 @@ function toCsvField(value: unknown): string {
 
     // Quoting does not stop a spreadsheet from evaluating the unquoted value,
     // so the apostrophe has to be added before the field is escaped.
-    const cell = FORMULA_PREFIX.test(text) ? `'${text}` : text;
+    const cell =
+        FORMULA_PREFIX.test(text) && !NEGATIVE_NUMBER.test(text)
+            ? `'${text}`
+            : text;
 
     if (cell.includes(",") || cell.includes('"')) {
         return `"${cell.replace(/"/g, '""')}"`;

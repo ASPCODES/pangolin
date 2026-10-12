@@ -147,6 +147,18 @@ function runTests() {
         );
     }
 
+    // A plain negative number is not a formula, so it must stay numeric
+    // instead of being forced to text with a leading apostrophe.
+    {
+        const csv = generateCSV([{ id: -12, path: "-1.5" }]);
+
+        assertEquals(
+            csv,
+            "id,path\n-12,-1.5",
+            "Negative numbers should stay numeric"
+        );
+    }
+
     // A formula prefix is only dangerous at the start of a cell, so it must not
     // be added mid-value.
     {
