@@ -51,6 +51,10 @@ import {
     updatePeerDataBatch,
     updateTargets
 } from "@server/routers/client/targets";
+import {
+    pushClientIdentitiesToSites,
+    sendClientIdentitiesAdd
+} from "@server/lib/clientIdentities";
 import { lockManager } from "#dynamic/lib/lock";
 import { rebuildQueue } from "#dynamic/lib/rebuildQueue";
 import { withRetry, isTransientError } from "@server/lib/dbRetry";
@@ -1437,6 +1441,8 @@ async function handleSubnetProxyTargetUpdates(
         >;
         version: string | null;
     }[] = [];
+    const identitiesToAddBatch: Parameters<typeof sendClientIdentitiesAdd>[0] =
+        [];
 
     for (const siteData of sitesList) {
         const siteId = siteData.siteId;
@@ -1473,6 +1479,14 @@ async function handleSubnetProxyTargetUpdates(
                         targets: targetsToAdd,
                         version: newt.version
                     });
+
+                    if (siteResource.mode === "http") {
+                        identitiesToAddBatch.push({
+                            newtId: newt.newtId,
+                            version: newt.version,
+                            clientIds: addedClients.map((c) => c.clientId)
+                        });
+                    }
                 }
 
                 olmJobs.push(
@@ -1581,6 +1595,10 @@ async function handleSubnetProxyTargetUpdates(
         }
     }
 
+    // Identities first so the HTTP proxy never serves an added client
+    // without its Remote-* headers.
+    await sendClientIdentitiesAdd(identitiesToAddBatch, trx);
+
     if (targetsToAddBatch.length > 0) {
         proxyJobs.push(addSubnetProxyTargetsBatch(targetsToAddBatch));
     }
@@ -1666,6 +1684,28 @@ export async function handleMessagingForUpdatedSiteResource(
     logger.debug(
         `handleMessagingForUpdatedSiteResource: generated updated targets count=${targets ? targets.length : 0}`
     );
+
+    // Make sure sites newly serving this resource over HTTP know the identity
+    // of each client that can reach it before targets are sent below. Sites
+    // that already served it over HTTP got them when the clients were added,
+    // so plain edits of an HTTP resource send nothing here.
+    if (targets && updatedSiteResource.mode === "http") {
+        const identitySiteIds =
+            existingSiteResource?.mode === "http"
+                ? updatedSiteIds.filter((id) => !existingSiteIds.includes(id))
+                : updatedSiteIds;
+        await sendClientIdentitiesAdd(
+            identitySiteIds
+                .map((siteId) => newtBySiteId.get(siteId))
+                .filter((newt) => newt !== undefined)
+                .map((newt) => ({
+                    newtId: newt.newtId,
+                    version: newt.version,
+                    clientIds: mergedAllClients.map((c) => c.clientId)
+                })),
+            trx
+        );
+    }
 
     const oldDestinationStillInUseClientSitePairs = new Set<string>();
     if (
@@ -2416,6 +2456,15 @@ async function rebuildClientAssociationsFromClientImpl(
     }
 
     /////////// Send messages ///////////
+
+    // Push this client's identity to every site where it can reach an HTTP
+    // resource before any targets referencing it, so newt's HTTP proxy can
+    // set Remote-* headers from the first request. Also refreshes it after
+    // role changes, which land here as well. Skipped outright for clients
+    // without HTTP access, which is the common case.
+    if (newSiteResources.some((r) => r.mode === "http" && r.enabled)) {
+        await pushClientIdentitiesToSites([client.clientId], trx);
+    }
 
     // Handle messages for sites being added
     await handleMessagesForClientSites(client, sitesToAdd, sitesToRemove, trx);

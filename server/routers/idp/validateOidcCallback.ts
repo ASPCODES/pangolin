@@ -35,6 +35,7 @@ import { LimitId } from "@server/lib/billing";
 import { usageService } from "@server/lib/billing/usageService";
 import { build } from "@server/build";
 import { calculateUserClientsForOrgs } from "@server/lib/calculateUserClientsForOrgs";
+import { pushClientIdentitiesForUser } from "@server/lib/clientIdentities";
 import { isSubscribed } from "#dynamic/lib/isSubscribed";
 import { isLicensedOrSubscribed } from "#dynamic/lib/isLicencedOrSubscribed";
 import { tierMatrix } from "@server/lib/billing/tierMatrix";
@@ -641,6 +642,17 @@ export async function validateOidcCallback(
                     { error: err }
                 );
             });
+
+            if (existingUser) {
+                // The sync above may have changed the user's name, email or
+                // roles, all of which newt forwards as Remote-* headers.
+                pushClientIdentitiesForUser(userId!).catch((err) => {
+                    logger.error(
+                        "Error pushing client identities after syncing OIDC user",
+                        { error: err }
+                    );
+                });
+            }
 
             for (const orgCount of orgUserCounts) {
                 await usageService.updateCount(
