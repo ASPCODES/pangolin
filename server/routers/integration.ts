@@ -16,6 +16,7 @@ import * as siteResource from "./siteResource";
 import * as aiProvider from "./aiProvider";
 import * as aiBudget from "./aiBudget";
 import * as virtualApiKey from "./virtualApiKey";
+import * as labels from "./labels";
 import {
     verifyApiKey,
     verifyApiKeyOrgAccess,
@@ -1832,4 +1833,54 @@ authenticated.get(
     verifyApiKeyVirtualApiKeyAccess,
     verifyApiKeyHasAction(ActionsEnum.listAiBudgets),
     aiBudget.listAiBudgetsForVirtualApiKey
+);
+
+authenticated.get(
+    "/org/:orgId/labels",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyHasAction(ActionsEnum.listOrgLabels),
+    labels.listOrgLabels
+);
+
+authenticated.post(
+    "/org/:orgId/labels",
+    verifyApiKeyOrgAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.createOrgLabel),
+    logActionAudit(ActionsEnum.createOrgLabel),
+    labels.createOrgLabel
+);
+
+authenticated.patch(
+    "/org/:orgId/label/:labelId",
+    verifyApiKeyOrgAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.updateOrgLabel),
+    logActionAudit(ActionsEnum.updateOrgLabel),
+    labels.updateOrgLabel
+);
+
+authenticated.delete(
+    "/org/:orgId/label/:labelId",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyHasAction(ActionsEnum.deleteOrgLabel),
+    logActionAudit(ActionsEnum.deleteOrgLabel),
+    labels.deleteOrgLabel
+);
+
+authenticated.put(
+    "/org/:orgId/label/:labelId/attach",
+    verifyApiKeyOrgAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.attachLabelToItem),
+    logActionAudit(ActionsEnum.attachLabelToItem),
+    labels.attachLabelToItem
+);
+
+authenticated.put(
+    "/org/:orgId/label/:labelId/detach",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyHasAction(ActionsEnum.detachLabelFromItem),
+    logActionAudit(ActionsEnum.detachLabelFromItem),
+    labels.detachLabelFromItem
 );
