@@ -16,7 +16,7 @@ import {
     newtSessions,
     clientSitesAssociationsCache
 } from "@server/db";
-import { sql } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 
 const peerRemovals: string[] = [];
 const server = http.createServer((req, res) => {
@@ -105,28 +105,28 @@ server.listen(0, "127.0.0.1", async () => {
 
         const result = await deleteOrgById("org1");
 
-        const row = (await db.get(
-            sql`select
-                (select count(*) from sites) as sites,
-                (select count(*) from "newt") as newts,
-                (select count(*) from "newtSession") as sessions,
-                (select count(*) from clientSitesAssociationsCache where siteId = 3) as assoc`
-        )) as {
-            sites: number;
-            newts: number;
-            sessions: number;
-            assoc: number;
-        };
+        // Read the leftovers through the query builder, not db.get(): the
+        // pg build type-checks this file against the pg driver too, and
+        // .get() exists only on the sqlite driver.
+        const [sitesRow] = await db.select({ count: count() }).from(sites);
+        const [newtsRow] = await db.select({ count: count() }).from(newts);
+        const [sessionsRow] = await db
+            .select({ count: count() })
+            .from(newtSessions);
+        const [assocRow] = await db
+            .select({ count: count() })
+            .from(clientSitesAssociationsCache)
+            .where(eq(clientSitesAssociationsCache.siteId, 3));
 
         console.log(
             "OBSERVATIONS " +
                 JSON.stringify({
                     peerRemovals: peerRemovals.slice().sort(),
                     terminatedNewtIds: result.deletedNewtIds.slice().sort(),
-                    sitesLeft: Number(row.sites),
-                    newtsLeft: Number(row.newts),
-                    sessionsLeft: Number(row.sessions),
-                    associationRowsLeft: Number(row.assoc)
+                    sitesLeft: sitesRow.count,
+                    newtsLeft: newtsRow.count,
+                    sessionsLeft: sessionsRow.count,
+                    associationRowsLeft: assocRow.count
                 })
         );
         server.close();
