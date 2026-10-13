@@ -23,6 +23,7 @@ import { sendToClient } from "#dynamic/routers/ws";
 import { deletePeer } from "@server/routers/gerbil/peers";
 import { OlmErrorCodes } from "@server/routers/olm/error";
 import { sendTerminateClient } from "@server/routers/client/terminate";
+import { cleanupSiteAssociations } from "@server/lib/rebuildClientAssociations";
 import { usageService } from "./billing/usageService";
 import { LimitId } from "./billing";
 
@@ -55,8 +56,7 @@ export async function deleteOrgById(
     const orgSites = await db
         .select()
         .from(sites)
-        .where(eq(sites.orgId, orgId))
-        .limit(1);
+        .where(eq(sites.orgId, orgId));
 
     const orgClients = await db
         .select()
@@ -73,20 +73,24 @@ export async function deleteOrgById(
 
     await db.transaction(async (trx) => {
         for (const site of orgSites) {
-            if (site.pubKey) {
-                if (site.type == "wireguard") {
+            if (site.type == "wireguard") {
+                if (site.pubKey) {
                     await deletePeer(site.exitNodeId!, site.pubKey);
-                } else if (site.type == "newt") {
-                    const [deletedNewt] = await trx
-                        .delete(newts)
-                        .where(eq(newts.siteId, site.siteId))
-                        .returning();
-                    if (deletedNewt) {
-                        deletedNewtIds.push(deletedNewt.newtId);
-                        await trx
-                            .delete(newtSessions)
-                            .where(eq(newtSessions.newtId, deletedNewt.newtId));
-                    }
+                }
+            } else if (site.type == "newt") {
+                // Same per-site cleanup deleteSite.ts performs, so that
+                // removing an org does not leave other orgs' clients
+                // holding stale associations for these sites.
+                await cleanupSiteAssociations(site, trx);
+                const [deletedNewt] = await trx
+                    .delete(newts)
+                    .where(eq(newts.siteId, site.siteId))
+                    .returning();
+                if (deletedNewt) {
+                    deletedNewtIds.push(deletedNewt.newtId);
+                    await trx
+                        .delete(newtSessions)
+                        .where(eq(newtSessions.newtId, deletedNewt.newtId));
                 }
             }
             logger.info(`Deleting site ${site.siteId}`);
