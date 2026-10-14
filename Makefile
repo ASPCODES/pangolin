@@ -102,6 +102,13 @@ build-saas:
 		--tag $(AWS_IMAGE):$(tag) \
 		--push .
 
+	docker buildx build \
+		--build-arg BUILD=enterprise \
+		--build-arg DATABASE=pg \
+		--platform linux/arm64 \
+		--tag $(AWS_IMAGE):$(tag)-ee \
+		--push .
+
 build-release-arm:
 	@if [ -z "$(tag)" ]; then \
 		echo "Error: tag is required. Usage: make build-release-arm tag=<tag>"; \
