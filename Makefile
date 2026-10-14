@@ -101,7 +101,6 @@ build-saas:
 		--platform linux/arm64 \
 		--tag $(AWS_IMAGE):$(tag) \
 		--push .
-
 	docker buildx build \
 		--build-arg BUILD=enterprise \
 		--build-arg DATABASE=pg \

@@ -55,17 +55,14 @@ COPY server/db/ios_models.json ./dist/ios_models.json
 COPY server/db/mac_models.json ./dist/mac_models.json
 COPY public ./public
 
-# Copy MaxMind databases for SaaS builds
-ARG BUILD=oss
-
 RUN mkdir -p ./maxmind
 
-# Copy MaxMind databases (placeholders exist for oss builds, real files for saas)
+# Copy MaxMind databases (empty placeholders unless real files were in the build context)
 COPY --from=builder-dev /app/GeoLite2-Country.mmdb ./maxmind/GeoLite2-Country.mmdb
 COPY --from=builder-dev /app/GeoLite2-ASN.mmdb ./maxmind/GeoLite2-ASN.mmdb
 
-# Remove MaxMind databases for non-saas builds (keep only for saas)
-RUN if [ "$BUILD" != "saas" ]; then rm -rf ./maxmind; fi
+# Remove empty placeholder MaxMind databases (and the directory if nothing real is left)
+RUN find ./maxmind -empty -delete
 
 # OCI Image Labels - Build Args for dynamic values
 ARG VERSION="dev"
