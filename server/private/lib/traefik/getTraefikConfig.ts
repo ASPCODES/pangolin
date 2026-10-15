@@ -56,7 +56,7 @@ import {
 } from "@server/lib/certificates";
 import { build } from "@server/build";
 import license from "#private/license/license";
-import regionalCache from "#private/lib/cache";
+import { regionalCache } from "#private/lib/cache";
 import { TargetWithSite } from "@server/lib/traefik/types";
 import { buildWildcardTls } from "@server/lib/traefik/certResolver";
 import {
@@ -341,7 +341,9 @@ export async function getTraefikConfig(
                 certificate: resourceMtlsCertificates.certificate
             })
             .from(resourceMtlsCertificates)
-            .where(inArray(resourceMtlsCertificates.resourceId, mtlsResourceIds))
+            .where(
+                inArray(resourceMtlsCertificates.resourceId, mtlsResourceIds)
+            )
             .orderBy(resourceMtlsCertificates.mtlsCertificateId);
         for (const row of caRows) {
             const list = mtlsCaCertsByResource.get(row.resourceId) ?? [];
