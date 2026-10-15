@@ -49,7 +49,7 @@ export function buildHttpLoadBalancerServers(targets: TargetWithSite[]) {
                 target.site.type === "wireguard"
             ) {
                 return {
-                    url: `${target.method}://${formatEndpoint(target.ip, target.port)}`
+                    url: `${target.method}://${formatEndpoint(target.ip!, target.port!)}`
                 };
             } else if (target.site.type === "newt") {
                 const ip = target.site.subnet!.split("/")[0];
@@ -124,7 +124,7 @@ export function buildTcpUdpLoadBalancerServers(targets: TargetWithSite[]) {
                 target.site.type === "wireguard"
             ) {
                 return {
-                    address: formatEndpoint(target.ip, target.port)
+                    address: formatEndpoint(target.ip!, target.port!)
                 };
             } else if (target.site.type === "newt") {
                 const ip = target.site.subnet!.split("/")[0];

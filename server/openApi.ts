@@ -33,6 +33,7 @@ export enum OpenAPITags {
     AiModel = "AI Model",
     AiBudget = "AI Budget",
     VirtualApiKey = "Virtual API Key",
+    Redirect = "Redirect",
     Label = "Label"
 }
 

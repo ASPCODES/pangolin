@@ -16,6 +16,7 @@ import * as siteResource from "./siteResource";
 import * as aiProvider from "./aiProvider";
 import * as aiBudget from "./aiBudget";
 import * as virtualApiKey from "./virtualApiKey";
+import * as redirect from "./redirect";
 import * as labels from "./labels";
 import {
     verifyApiKey,
@@ -39,6 +40,7 @@ import {
     verifyApiKeyAiModelAccess,
     verifyApiKeyAiBudgetAccess,
     verifyApiKeyVirtualApiKeyAccess,
+    verifyApiKeyRedirectAccess,
     verifyUserHasAction
 } from "@server/middlewares";
 import HttpCode from "@server/types/HttpCode";
@@ -1866,6 +1868,55 @@ authenticated.get(
     verifyApiKeyVirtualApiKeyAccess,
     verifyApiKeyHasAction(ActionsEnum.listAiBudgets),
     aiBudget.listAiBudgetsForVirtualApiKey
+);
+
+authenticated.put(
+    "/org/:orgId/redirect",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyHasAction(ActionsEnum.createRedirect),
+    logActionAudit(ActionsEnum.createRedirect),
+    redirect.createRedirect
+);
+
+authenticated.get(
+    "/org/:orgId/redirects",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyHasAction(ActionsEnum.listRedirects),
+    redirect.listRedirects
+);
+
+authenticated.get(
+    "/org/:orgId/redirects/:redirectId",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyRedirectAccess,
+    verifyApiKeyHasAction(ActionsEnum.getRedirect),
+    redirect.getRedirect
+);
+
+authenticated.get(
+    "/org/:orgId/redirect/:niceId",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyRedirectAccess,
+    verifyApiKeyHasAction(ActionsEnum.getRedirect),
+    redirect.getRedirect
+);
+
+authenticated.post(
+    "/org/:orgId/redirects/:redirectId",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyRedirectAccess,
+    verifyApiKeyHasAction(ActionsEnum.updateRedirect),
+    logActionAudit(ActionsEnum.updateRedirect),
+    redirect.updateRedirect
+);
+
+authenticated.delete(
+    "/org/:orgId/redirects/:redirectId",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyRedirectAccess,
+    verifyApiKeyHasAction(ActionsEnum.deleteRedirect),
+    logActionAudit(ActionsEnum.deleteRedirect),
+    redirect.deleteRedirect
 );
 
 authenticated.get(
