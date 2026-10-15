@@ -387,6 +387,13 @@ authenticated.get(
     siteResource.getSiteResource
 );
 
+authenticated.get(
+    "/site-resource/:siteResourceId/blueprint",
+    verifySiteResourceAccess,
+    verifyUserHasAction(ActionsEnum.getSiteResource),
+    siteResource.exportSiteResourceBlueprint
+);
+
 authenticated.post(
     "/site-resource/:siteResourceId",
     verifySiteResourceAccess,
@@ -765,6 +772,13 @@ authenticated.get(
     verifyUserHasAction(ActionsEnum.getResource),
     resource.getResource
 );
+
+authenticated.get(
+    "/resource/:resourceId/blueprint",
+    verifyResourceAccess,
+    verifyUserHasAction(ActionsEnum.getResource),
+    resource.exportResourceBlueprint
+);
 authenticated.get(
     "/org/:orgId/resource/:niceId",
     verifyOrgAccess,
@@ -833,6 +847,28 @@ authenticated.delete(
     verifyUserHasAction(ActionsEnum.deleteResourceRule),
     logActionAudit(ActionsEnum.deleteResourceRule),
     resource.deleteResourceRule
+);
+
+authenticated.put(
+    "/resource/:resourceId/mtls/certificate",
+    verifyResourceAccess,
+    verifyLimits,
+    verifyUserHasAction(ActionsEnum.createResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.createResourceMtlsCertificate),
+    resource.createResourceMtlsCertificate
+);
+authenticated.get(
+    "/resource/:resourceId/mtls/certificates",
+    verifyResourceAccess,
+    verifyUserHasAction(ActionsEnum.listResourceMtlsCertificates),
+    resource.listResourceMtlsCertificates
+);
+authenticated.delete(
+    "/resource/:resourceId/mtls/certificate/:mtlsCertificateId",
+    verifyResourceAccess,
+    verifyUserHasAction(ActionsEnum.deleteResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.deleteResourceMtlsCertificate),
+    resource.deleteResourceMtlsCertificate
 );
 
 authenticated.get(

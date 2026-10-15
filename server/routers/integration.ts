@@ -17,6 +17,7 @@ import * as aiProvider from "./aiProvider";
 import * as aiBudget from "./aiBudget";
 import * as virtualApiKey from "./virtualApiKey";
 import * as redirect from "./redirect";
+import * as labels from "./labels";
 import {
     verifyApiKey,
     verifyApiKeyOrgAccess,
@@ -737,6 +738,39 @@ authenticated.delete(
     verifyApiKeyHasAction(ActionsEnum.deleteResourceRule),
     logActionAudit(ActionsEnum.deleteResourceRule),
     resource.deleteResourceRule
+);
+
+authenticated.put(
+    [
+        "/resource/:resourceId/mtls/certificate",
+        "/public-resource/:resourceId/mtls/certificate"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.createResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.createResourceMtlsCertificate),
+    resource.createResourceMtlsCertificate
+);
+
+authenticated.get(
+    [
+        "/resource/:resourceId/mtls/certificates",
+        "/public-resource/:resourceId/mtls/certificates"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyApiKeyHasAction(ActionsEnum.listResourceMtlsCertificates),
+    resource.listResourceMtlsCertificates
+);
+
+authenticated.delete(
+    [
+        "/resource/:resourceId/mtls/certificate/:mtlsCertificateId",
+        "/public-resource/:resourceId/mtls/certificate/:mtlsCertificateId"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyApiKeyHasAction(ActionsEnum.deleteResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.deleteResourceMtlsCertificate),
+    resource.deleteResourceMtlsCertificate
 );
 
 authenticated.get(
@@ -1883,4 +1917,54 @@ authenticated.delete(
     verifyApiKeyHasAction(ActionsEnum.deleteRedirect),
     logActionAudit(ActionsEnum.deleteRedirect),
     redirect.deleteRedirect
+);
+
+authenticated.get(
+    "/org/:orgId/labels",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyHasAction(ActionsEnum.listOrgLabels),
+    labels.listOrgLabels
+);
+
+authenticated.post(
+    "/org/:orgId/labels",
+    verifyApiKeyOrgAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.createOrgLabel),
+    logActionAudit(ActionsEnum.createOrgLabel),
+    labels.createOrgLabel
+);
+
+authenticated.patch(
+    "/org/:orgId/label/:labelId",
+    verifyApiKeyOrgAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.updateOrgLabel),
+    logActionAudit(ActionsEnum.updateOrgLabel),
+    labels.updateOrgLabel
+);
+
+authenticated.delete(
+    "/org/:orgId/label/:labelId",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyHasAction(ActionsEnum.deleteOrgLabel),
+    logActionAudit(ActionsEnum.deleteOrgLabel),
+    labels.deleteOrgLabel
+);
+
+authenticated.put(
+    "/org/:orgId/label/:labelId/attach",
+    verifyApiKeyOrgAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.attachLabelToItem),
+    logActionAudit(ActionsEnum.attachLabelToItem),
+    labels.attachLabelToItem
+);
+
+authenticated.put(
+    "/org/:orgId/label/:labelId/detach",
+    verifyApiKeyOrgAccess,
+    verifyApiKeyHasAction(ActionsEnum.detachLabelFromItem),
+    logActionAudit(ActionsEnum.detachLabelFromItem),
+    labels.detachLabelFromItem
 );

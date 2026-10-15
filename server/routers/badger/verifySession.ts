@@ -170,17 +170,16 @@ export async function verifyResourceSession(
             originalRequestURL,
             requestIp,
             path,
+            method,
             headers,
             query,
-            method,
             badgerVersion
         } = parsedBody.data;
 
         // Extract HTTP Basic Auth credentials if present
         const clientHeaderAuth = extractBasicAuth(headers);
 
-        const clientUserAgent =
-            headers?.["user-agent"] || headers?.["User-Agent"];
+        const clientUserAgent = getClientHeader(headers, "user-agent");
         const clientIsBrowser = isBrowserUserAgent(clientUserAgent);
 
         const clientIp = requestIp
@@ -486,7 +485,15 @@ export async function verifyResourceSession(
 
             // Browsers go to the resource auth / API key page. API clients get
             // a capability-shaped JSON auth error instead of a redirect.
-            if (clientIsBrowser) {
+            // Never redirect programmatic API calls (non-GET, or a known AI
+            // capability path): HTTP clients such as the OpenAI Python SDK
+            // (httpx) don't follow 302s on POST, so a redirect surfaces as
+            // an opaque failure with nothing logged in aiSessionLog since
+            // the request never reaches the gateway.
+            if (
+                clientIsBrowser &&
+                !isProgrammaticApiRequest(path, method, headers)
+            ) {
                 return notAllowed(res, redirectPath, resource.orgId);
             }
 
@@ -1772,14 +1779,29 @@ const NON_BROWSER_USER_AGENT_PATTERNS = [
     /wget/,
     /python-requests/,
     /python-urllib/,
+    /python-httpx/,
+    /httpx/,
+    /httpcore/,
+    /aiohttp/,
+    /urllib3/,
+    /openai\//,
+    /anthropic/,
     /go-http-client/,
     /okhttp/,
     /axios/,
     /node-fetch/,
+    /undici/,
     /postmanruntime/,
     /insomnia/,
     /libwww-perl/,
     /java\//,
+    /\bjava\b/,
+    /jakarta/,
+    /jersey/,
+    /netty/,
+    /jetty/,
+    /eclipse/,
+    /dbeaver/,
     /ruby/,
     /php/,
     /bot/,
@@ -1802,6 +1824,52 @@ function isBrowserUserAgent(userAgent: string | undefined): boolean {
     const ua = userAgent.toLowerCase();
 
     return !NON_BROWSER_USER_AGENT_PATTERNS.some((pattern) => pattern.test(ua));
+}
+
+function getClientHeader(
+    headers: Record<string, string> | undefined,
+    name: string
+): string | undefined {
+    if (!headers) {
+        return undefined;
+    }
+    const lower = name.toLowerCase();
+    for (const [key, value] of Object.entries(headers)) {
+        if (key.toLowerCase() === lower) {
+            return value;
+        }
+    }
+    return undefined;
+}
+
+// True for programmatic API calls that can't complete an interactive login,
+// even if the User-Agent looks like a browser (some SDKs reuse browser-ish
+// strings or omit a distinctive token). Badger turns a redirectUrl into a
+// 302, which HTTP clients don't follow on POST, so these must get a JSON
+// auth error instead.
+function isProgrammaticApiRequest(
+    path: string | undefined,
+    method: string | undefined,
+    headers: Record<string, string> | undefined
+): boolean {
+    if (method && method.toUpperCase() !== "GET") {
+        return true;
+    }
+    if (path && resolveAiCapabilityFromPath(path) !== null) {
+        return true;
+    }
+    const accept = getClientHeader(headers, "accept");
+    if (accept && !accept.toLowerCase().includes("text/html")) {
+        return true;
+    }
+    const secFetchMode = getClientHeader(headers, "sec-fetch-mode");
+    if (
+        secFetchMode &&
+        !["navigate", "document"].includes(secFetchMode.toLowerCase())
+    ) {
+        return true;
+    }
+    return false;
 }
 
 function extractBasicAuth(

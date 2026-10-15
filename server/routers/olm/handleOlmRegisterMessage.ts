@@ -20,7 +20,6 @@ import { OlmErrorCodes, sendOlmError } from "./error";
 import { handleFingerprintInsertion } from "./fingerprintingUtils";
 import { build } from "@server/build";
 import { canCompress } from "@server/lib/clientVersionChecks";
-import config from "@server/lib/config";
 import cache from "#dynamic/lib/cache"; // not using regional here because we need this in the register message handler before we know where the client is
 import { waitForClientRebuildIdle } from "@server/lib/rebuildClientAssociations";
 import {
@@ -30,6 +29,7 @@ import {
 } from "#dynamic/lib/exitNodes";
 import { getUniqueSubnetForExitNode } from "@server/lib/exitNodes";
 import { addPeer, deletePeer } from "../gerbil/peers";
+import { formatEndpoint } from "@server/lib/ip";
 
 const HOLEPUNCH_STALE_CHAIN_THRESHOLD = 18;
 const HOLEPUNCH_STALE_CHAIN_TTL_SECONDS = 1800;
@@ -277,7 +277,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
     );
 
     let jitMode = false;
-    if (sitesCount > 250 && build == "saas") {
+    if (sitesCount > org.settingsJitModeLimit && build == "saas") {
         // THIS IS THE MAX ON THE BUSINESS TIER
         // we have too many sites
         // If we have too many sites we need to drop into fully JIT mode by not sending any of the sites
@@ -437,7 +437,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
     // TODO: I still think there is a better way to do this rather than locking it out here but ???
     if (now - (client.lastHolePunch || 0) > 12 && sitesCount > 0) {
         logger.warn(
-            `[handleOlmRegisterMessage] Client last hole punch is too old and we have sites to send; skipping this register. The client is failing to hole punch and identify its network address with the server. Can the client reach the server on UDP port ${config.getRawConfig().gerbil.clients_start_port}?`,
+            `[handleOlmRegisterMessage] Client last hole punch is too old and we have sites to send; skipping this register. The client is failing to hole punch and identify its network address with the server. Can the client reach the server on its relay UDP port?`,
             { orgId: client.orgId, clientId: client.clientId }
         );
 
@@ -508,7 +508,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
                         ? {
                               aliases: exitNodeAliases,
                               connect: exitNodeAliases.length > 0, // we do not need to connect to the exit node if we do not have inference resources and right now all site resources on the exit node have an alias
-                              endpoint: `${exitNode.endpoint}:${exitNode.listenPort}`,
+                              endpoint: formatEndpoint(exitNode.endpoint, exitNode.listenPort),
                               publicKey: exitNode.publicKey,
                               serverIP: exitNode.address.split("/")[0],
                               tunnelIP: `${clientSubnet.split("/")[0]}/${exitNode.address.split("/")[1]}` // we need to use the exit node's subnet mask here because the client will be using the exit node's subnet mask for its routing table so we can address it

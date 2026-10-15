@@ -18,6 +18,7 @@ import { z } from "zod";
 import { colorsSchema } from "@server/lib/colorsSchema";
 import { build } from "@server/build";
 import { getEnvOrYaml } from "@server/lib/getEnvOrYaml";
+import { DEFAULT_OFFLINE_THRESHOLDS } from "@server/lib/offlineThresholds";
 
 const portSchema = z.number().positive().gt(0).lte(65535);
 
@@ -109,6 +110,16 @@ export const privateConfigSchema = z
                     .array(z.string())
                     .optional()
                     .default([]),
+                // Zone names (zone cuts) this server is authoritative for
+                // beyond the customer domains stored in the `domains` table -
+                // e.g. a self-hosted deployment's own nameserver zone or
+                // cname/site extension zones. Any query landing on one of
+                // these names, or an empty non-terminal beneath one, that
+                // doesn't match a more specific record gets NOERROR/NODATA +
+                // SOA (not NXDOMAIN), so QNAME-minimising resolvers (RFC
+                // 9156) don't treat the ancestor as proof nothing exists
+                // below it (RFC 8020). Left for the user to populate.
+                zones: z.array(z.string()).optional().default([]),
                 rate_limit: z
                     .object({
                         enabled: z.boolean().optional().default(true),
@@ -164,6 +175,36 @@ export const privateConfigSchema = z
                     .string()
                     .optional()
                     .default("http://gerbil:3004")
+            })
+            .prefault({}),
+        // How long a newt site / olm client / remote exit node has to go
+        // without a ping before the offline checker marks it offline, and how
+        // often the checkers run.
+        offline_checker: z
+            .object({
+                check_interval_ms: z
+                    .number()
+                    .int()
+                    .positive()
+                    .default(DEFAULT_OFFLINE_THRESHOLDS.checkIntervalMs),
+                newt_threshold_ms: z
+                    .number()
+                    .int()
+                    .default(DEFAULT_OFFLINE_THRESHOLDS.newtMs),
+                // wireguard sites don't ping, so they are judged by their
+                // last bandwidth update instead
+                newt_wireguard_threshold_ms: z
+                    .number()
+                    .int()
+                    .default(DEFAULT_OFFLINE_THRESHOLDS.newtWireguardMs),
+                olm_threshold_ms: z
+                    .number()
+                    .int()
+                    .default(DEFAULT_OFFLINE_THRESHOLDS.olmMs),
+                remote_exit_node_threshold_ms: z
+                    .number()
+                    .int()
+                    .default(DEFAULT_OFFLINE_THRESHOLDS.remoteExitNodeMs)
             })
             .prefault({}),
         flags: z

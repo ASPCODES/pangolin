@@ -78,7 +78,8 @@ export const orgs = sqliteTable("orgs", {
         { mode: "boolean" }
     )
         .notNull()
-        .default(false)
+        .default(false),
+    settingsJitModeLimit: integer("settingsJitModeLimit").notNull().default(250)
 });
 
 export const userDomains = sqliteTable("userDomains", {
@@ -129,7 +130,7 @@ export const sites = sqliteTable(
         address: text("address"), // this is the address of the wireguard interface in newt
         endpoint: text("endpoint"), // this is how to reach gerbil externally - gets put into the wireguard config
         localEndpoints: text("localEndpoints"), // JSON encoded list of string ips on the local machine to try to connect to
-        publicKey: text("publicKey"), // TODO: Fix typo in publicKey
+        publicKey: text("publicKey"),
         lastHolePunch: integer("lastHolePunch"),
         listenPort: integer("listenPort"),
         dockerSocketEnabled: integer("dockerSocketEnabled", { mode: "boolean" })
@@ -196,6 +197,10 @@ export const resources = sqliteTable(
         stickySession: integer("stickySession", { mode: "boolean" })
             .notNull()
             .default(false),
+        loadBalancingStrategy: text("loadBalancingStrategy")
+            .$type<"wrr" | "p2c" | "hrw" | "leasttime">()
+            .notNull()
+            .default("wrr"), // traefik http loadBalancer.strategy
         tlsServerName: text("tlsServerName"),
         setHostHeader: text("setHostHeader"),
         enableProxy: integer("enableProxy", { mode: "boolean" }).default(true),
@@ -219,6 +224,9 @@ export const resources = sqliteTable(
         maintenanceTitle: text("maintenanceTitle"),
         maintenanceMessage: text("maintenanceMessage"),
         maintenanceEstimatedTime: text("maintenanceEstimatedTime"),
+        mtlsEnabled: integer("mtlsEnabled", { mode: "boolean" })
+            .notNull()
+            .default(false),
         postAuthPath: text("postAuthPath"),
         health: text("health").default("unknown"), // "healthy", "unhealthy", "unknown"
         wildcard: integer("wildcard", { mode: "boolean" })
@@ -517,6 +525,7 @@ export const exitNodes = sqliteTable("exitNodes", {
     endpoint: text("endpoint").notNull(), // this is how to reach gerbil externally - gets put into the wireguard config
     publicKey: text("publicKey").notNull(),
     listenPort: integer("listenPort").notNull(),
+    relayPort: integer("relayPort").notNull(),
     reachableAt: text("reachableAt"), // this is the internal address of the gerbil http server for command control
     maxConnections: integer("maxConnections"),
     online: integer("online", { mode: "boolean" }).notNull().default(false),
@@ -549,8 +558,8 @@ export const siteResources = sqliteTable("siteResources", {
     name: text("name").notNull(),
     ssl: integer("ssl", { mode: "boolean" }).notNull().default(false),
     mode: text("mode")
-        .$type<"host" | "cidr" | "http" | "ssh" | "inference">()
-        .notNull(), // "host" | "cidr" | "http"
+        .$type<"host" | "cidr" | "http" | "ssh" | "inference" | "gateway">()
+        .notNull(),
     scheme: text("scheme").$type<"http" | "https">(), // only for when we are doing https or http mode
     proxyPort: integer("proxyPort"), // only for port mode
     destinationPort: integer("destinationPort"), // only for port mode
@@ -1130,6 +1139,27 @@ export const userOrgRoles = sqliteTable(
     (t) => [unique().on(t.userId, t.orgId, t.roleId)]
 );
 
+// roles assigned to machine clients (clients with no userId) so they can be
+// granted access to site resources through roleSiteResources like users are
+export const clientOrgRoles = sqliteTable(
+    "clientOrgRoles",
+    {
+        clientId: integer("clientId")
+            .notNull()
+            .references(() => clients.clientId, { onDelete: "cascade" }),
+        orgId: text("orgId")
+            .notNull()
+            .references(() => orgs.orgId, { onDelete: "cascade" }),
+        roleId: integer("roleId")
+            .notNull()
+            .references(() => roles.roleId, { onDelete: "cascade" })
+    },
+    (t) => [
+        unique().on(t.clientId, t.orgId, t.roleId),
+        index("idx_clientOrgRoles_roleId").on(t.roleId)
+    ]
+);
+
 export const roleActions = sqliteTable("roleActions", {
     roleId: integer("roleId")
         .notNull()
@@ -1412,6 +1442,27 @@ export const resourceWhitelist = sqliteTable("resourceWhitelist", {
         .notNull()
         .references(() => resources.resourceId, { onDelete: "cascade" })
 });
+
+export const resourceMtlsCertificates = sqliteTable(
+    "resourceMtlsCertificates",
+    {
+        mtlsCertificateId: integer("mtlsCertificateId").primaryKey({
+            autoIncrement: true
+        }),
+        resourceId: integer("resourceId")
+            .notNull()
+            .references(() => resources.resourceId, { onDelete: "cascade" }),
+        name: text("name"),
+        certificate: text("certificate").notNull(),
+        subject: text("subject"),
+        issuer: text("issuer"),
+        serialNumber: text("serialNumber"),
+        fingerprint: text("fingerprint"),
+        notBefore: integer("notBefore"),
+        notAfter: integer("notAfter"),
+        createdAt: integer("createdAt").notNull()
+    }
+);
 
 export const resourceOtp = sqliteTable("resourceOtp", {
     otpId: integer("otpId").primaryKey({
@@ -2088,6 +2139,7 @@ export type UserInvite = InferSelectModel<typeof userInvites>;
 export type UserInviteRole = InferSelectModel<typeof userInviteRoles>;
 export type UserOrg = InferSelectModel<typeof userOrgs>;
 export type UserOrgRole = InferSelectModel<typeof userOrgRoles>;
+export type ClientOrgRole = InferSelectModel<typeof clientOrgRoles>;
 export type ResourceSession = InferSelectModel<typeof resourceSessions>;
 export type ResourcePincode = InferSelectModel<typeof resourcePincode>;
 export type ResourcePassword = InferSelectModel<typeof resourcePassword>;
@@ -2098,6 +2150,9 @@ export type ResourceHeaderAuthExtendedCompatibility = InferSelectModel<
 export type ResourceOtp = InferSelectModel<typeof resourceOtp>;
 export type ResourceAccessToken = InferSelectModel<typeof resourceAccessToken>;
 export type ResourceWhitelist = InferSelectModel<typeof resourceWhitelist>;
+export type ResourceMtlsCertificate = InferSelectModel<
+    typeof resourceMtlsCertificates
+>;
 export type VersionMigration = InferSelectModel<typeof versionMigrations>;
 export type ResourceRule = InferSelectModel<typeof resourceRules>;
 export type Domain = InferSelectModel<typeof domains>;

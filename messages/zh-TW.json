@@ -2426,7 +2426,7 @@
     "sitesTableViewPublicResources": "檢視公共資源",
     "sitesTableViewPrivateResources": "檢視私有資源",
     "siteInstallKubernetesDocsDescription": "有關最新的 Kubernetes 安裝資訊，請參閱<docsLink>docs.pangolin.net/manage/sites/install-kubernetes</docsLink>。",
-    "siteInstallAdvantechDocsDescription": "有關 Advantech 數據機安裝說明，請參閱<docsLink>docs.pangolin.net/manage/sites/install-advantech</docsLink>。",
+    "siteInstallAdvantechDocsDescription": "有關 Advantech 數據機安裝說明，請參閱<docsLink>docs.pangolin.net/manage/sites/install-newt#advantech-router-app</docsLink>。",
     "siteRestartTitle": "重新啟動站台",
     "siteRestartDescription": "重新啟動此站台的WireGuard隧道。此操作將暫時中斷連線。",
     "siteRestartBody": "如果站台隧道無法正常工作，並且您希望在不重新啟動主機的情況下強制重新連線，請使用此選項。",
