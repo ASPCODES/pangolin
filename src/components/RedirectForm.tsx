@@ -58,7 +58,7 @@ import {
     isValidRegex
 } from "@server/routers/redirect/validation";
 import type { AxiosResponse } from "axios";
-import { InfoIcon, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, InfoIcon, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -111,6 +111,7 @@ export default function RedirectForm({
                   .join(".")
             : null
     );
+    const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
     const formSchema = useMemo(
         () =>
@@ -320,35 +321,44 @@ export default function RedirectForm({
 
     return (
         <SettingsContainer>
-            <SettingsSection className="pb-10">
-                <SettingsSectionHeader>
-                    <SettingsSectionTitle>
-                        {t("redirectSource")}
-                    </SettingsSectionTitle>
-                    <SettingsSectionDescription>
-                        {t("redirectSourceSectionDescription")}
-                    </SettingsSectionDescription>
-                </SettingsSectionHeader>
+            <Form {...form}>
+                <form
+                    action={formAction}
+                    id="redirect-form"
+                    className="space-y-6"
+                >
+                    <SettingsSection className="pb-10">
+                        <SettingsSectionHeader>
+                            <SettingsSectionTitle>
+                                {t("general")}
+                            </SettingsSectionTitle>
+                        </SettingsSectionHeader>
 
-                <SettingsSectionBody>
-                    <SettingsSectionForm variant="half">
-                        <Form {...form}>
-                            <form action={formAction} id="redirect-form">
+                        <SettingsSectionBody>
+                            <SettingsSectionForm variant="half">
                                 <SettingsFormGrid>
-                                    <SettingsFormCell
-                                        span="full"
-                                        className="flex flex-col items-start gap-4"
-                                    >
-                                        {resourceMissingDomain && (
-                                            <Alert variant="neutral">
-                                                <InfoIcon className="h-4 w-4" />
-                                                <AlertDescription>
-                                                    {t(
-                                                        "redirectDomainSelectedDomainNotFound"
-                                                    )}
-                                                </AlertDescription>
-                                            </Alert>
-                                        )}
+                                    <SettingsFormCell span="full">
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("name")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            autoComplete="off"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </SettingsFormCell>
+
+                                    <SettingsFormCell span="full">
                                         <FormField
                                             control={form.control}
                                             name="enabled"
@@ -378,27 +388,36 @@ export default function RedirectForm({
                                             )}
                                         />
                                     </SettingsFormCell>
+                                </SettingsFormGrid>
+                            </SettingsSectionForm>
+                        </SettingsSectionBody>
+                    </SettingsSection>
 
-                                    <SettingsFormCell span="full">
-                                        <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        {t("name")}
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            autoComplete="off"
-                                                            {...field}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </SettingsFormCell>
+                    <SettingsSection className="pb-10">
+                        <SettingsSectionHeader>
+                            <SettingsSectionTitle>
+                                {t("redirectSource")}
+                            </SettingsSectionTitle>
+                            <SettingsSectionDescription>
+                                {t("redirectSourceSectionDescription")}
+                            </SettingsSectionDescription>
+                        </SettingsSectionHeader>
+
+                        <SettingsSectionBody>
+                            <SettingsSectionForm variant="half">
+                                <SettingsFormGrid>
+                                    {resourceMissingDomain && (
+                                        <SettingsFormCell span="full">
+                                            <Alert variant="neutral">
+                                                <InfoIcon className="h-4 w-4" />
+                                                <AlertDescription>
+                                                    {t(
+                                                        "redirectDomainSelectedDomainNotFound"
+                                                    )}
+                                                </AlertDescription>
+                                            </Alert>
+                                        </SettingsFormCell>
+                                    )}
 
                                     <SettingsFormCell span="half">
                                         <FormField
@@ -423,23 +442,28 @@ export default function RedirectForm({
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
-                                                            <SelectItem value="domain">
+                                                            <SelectItem
+                                                                value="domain"
+                                                                description={t(
+                                                                    "redirectAttachDomainDescription"
+                                                                )}
+                                                            >
                                                                 {t(
                                                                     "redirectAttachDomain"
                                                                 )}
                                                             </SelectItem>
-                                                            <SelectItem value="resource">
+                                                            <SelectItem
+                                                                value="resource"
+                                                                description={t(
+                                                                    "redirectAttachResourceDescription"
+                                                                )}
+                                                            >
                                                                 {t(
                                                                     "redirectAttachResource"
                                                                 )}
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
-                                                    <FormDescription>
-                                                        {t(
-                                                            "redirectAttachedToDescription"
-                                                        )}
-                                                    </FormDescription>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
@@ -552,150 +576,7 @@ export default function RedirectForm({
                                         </SettingsFormCell>
                                     )}
 
-                                    {attachTo === "resource" && (
-                                        <SettingsFormCell span="full">
-                                            <FormItem>
-                                                <FormLabel>
-                                                    {t("resourceDomain")}
-                                                </FormLabel>
-                                                <Input
-                                                    disabled
-                                                    readOnly
-                                                    value={
-                                                        selectedResource?.fullDomain ??
-                                                        ""
-                                                    }
-                                                    placeholder={
-                                                        selectedResource
-                                                            ? t(
-                                                                  "redirectResourceNoDomain"
-                                                              )
-                                                            : t(
-                                                                  "resourceSelect"
-                                                              )
-                                                    }
-                                                />
-                                            </FormItem>
-                                        </SettingsFormCell>
-                                    )}
-
-                                    {/* The cloud only serves HTTPS, so there is nothing to toggle there. */}
-                                    {build !== "saas" && (
-                                        <SettingsFormCell span="full">
-                                            <FormField
-                                                control={form.control}
-                                                name="ssl"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <SwitchInput
-                                                                id="redirect-ssl"
-                                                                label={t(
-                                                                    "proxyEnableSSL"
-                                                                )}
-                                                                description={
-                                                                    attachTo ===
-                                                                    "resource"
-                                                                        ? t(
-                                                                              "redirectSslInheritedDescription"
-                                                                          )
-                                                                        : t(
-                                                                              "redirectSslDescription"
-                                                                          )
-                                                                }
-                                                                disabled={
-                                                                    attachTo ===
-                                                                    "resource"
-                                                                }
-                                                                checked={
-                                                                    attachTo ===
-                                                                    "resource"
-                                                                        ? (selectedResource?.ssl ??
-                                                                          true)
-                                                                        : field.value
-                                                                }
-                                                                onCheckedChange={
-                                                                    field.onChange
-                                                                }
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </SettingsFormCell>
-                                    )}
-                                </SettingsFormGrid>
-                            </form>
-                        </Form>
-                    </SettingsSectionForm>
-                </SettingsSectionBody>
-            </SettingsSection>
-
-            <SettingsSection className="pb-10">
-                <SettingsSectionHeader>
-                    <SettingsSectionTitle>
-                        {t("redirectSettings")}
-                    </SettingsSectionTitle>
-                    <SettingsSectionDescription>
-                        {t("redirectSettingsDescription")}
-                    </SettingsSectionDescription>
-                </SettingsSectionHeader>
-
-                <SettingsSectionBody>
-                    <SettingsSectionForm variant="half">
-                        <Form {...form}>
-                            <form action={formAction}>
-                                <SettingsFormGrid>
                                     <SettingsFormCell span="full">
-                                        <SwitchInput
-                                            id="redirect-same-domain"
-                                            label={t(
-                                                "redirectSameDomainAsSource"
-                                            )}
-                                            description={t(
-                                                "redirectSameDomainAsSourceDescription"
-                                            )}
-                                            checked={sameDomainAsSource}
-                                            onCheckedChange={
-                                                setSameDomainAsSource
-                                            }
-                                        />
-                                    </SettingsFormCell>
-
-                                    <SettingsFormCell span="full">
-                                        <FormField
-                                            control={form.control}
-                                            name="destinationHost"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        {t(
-                                                            "redirectDestinationHost"
-                                                        )}
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            autoComplete="off"
-                                                            placeholder="https://example.com"
-                                                            readOnly={
-                                                                sameDomainAsSource
-                                                            }
-                                                            {...field}
-                                                        />
-                                                    </FormControl>
-                                                    <FormDescription>
-                                                        {t(
-                                                            "redirectDestinationHostDescription"
-                                                        )}
-                                                    </FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </SettingsFormCell>
-
-                                    <SettingsFormCell span="half">
                                         <FormField
                                             control={form.control}
                                             name="matchPath"
@@ -767,7 +648,169 @@ export default function RedirectForm({
                                         />
                                     </SettingsFormCell>
 
-                                    <SettingsFormCell span="half">
+                                    <SettingsFormCell span="full">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                                setShowAdvancedSettings(
+                                                    !showAdvancedSettings
+                                                )
+                                            }
+                                            className="mt-2 flex items-center gap-2 -ml-3"
+                                        >
+                                            {showAdvancedSettings ? (
+                                                <ChevronUp className="h-4 w-4" />
+                                            ) : (
+                                                <ChevronDown className="h-4 w-4" />
+                                            )}
+                                            {t("advancedSettings")}
+                                        </Button>
+                                    </SettingsFormCell>
+                                    {showAdvancedSettings && (
+                                        <>
+                                            {/* The cloud only serves HTTPS, and resource-attached redirects inherit TLS, so there is nothing to toggle in those cases. */}
+                                            {build !== "saas" &&
+                                                attachTo === "domain" && (
+                                                    <SettingsFormCell span="full">
+                                                        <FormField
+                                                            control={
+                                                                form.control
+                                                            }
+                                                            name="ssl"
+                                                            render={({
+                                                                field
+                                                            }) => (
+                                                                <FormItem>
+                                                                    <FormControl>
+                                                                        <SwitchInput
+                                                                            id="redirect-ssl"
+                                                                            label={t(
+                                                                                "proxyEnableSSL"
+                                                                            )}
+                                                                            description={t(
+                                                                                "redirectSslDescription"
+                                                                            )}
+                                                                            checked={
+                                                                                field.value
+                                                                            }
+                                                                            onCheckedChange={
+                                                                                field.onChange
+                                                                            }
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </SettingsFormCell>
+                                                )}
+                                            <SettingsFormCell span="half">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="priority"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                {t("priority")}
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    type="number"
+                                                                    min={1}
+                                                                    max={1000}
+                                                                    {...field}
+                                                                    onChange={(
+                                                                        e
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .valueAsNumber
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormDescription>
+                                                                {t(
+                                                                    "redirectPriorityDescription"
+                                                                )}
+                                                            </FormDescription>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </SettingsFormCell>
+                                        </>
+                                    )}
+                                </SettingsFormGrid>
+                            </SettingsSectionForm>
+                        </SettingsSectionBody>
+                    </SettingsSection>
+
+                    <SettingsSection className="pb-10">
+                        <SettingsSectionHeader>
+                            <SettingsSectionTitle>
+                                {t("redirectDestination")}
+                            </SettingsSectionTitle>
+                            <SettingsSectionDescription>
+                                {t("redirectDestinationSectionDescription")}
+                            </SettingsSectionDescription>
+                        </SettingsSectionHeader>
+
+                        <SettingsSectionBody>
+                            <SettingsSectionForm variant="half">
+                                <SettingsFormGrid>
+                                    <SettingsFormCell span="full">
+                                        <SwitchInput
+                                            id="redirect-same-domain"
+                                            label={t(
+                                                "redirectSameDomainAsSource"
+                                            )}
+                                            description={t(
+                                                "redirectSameDomainAsSourceDescription"
+                                            )}
+                                            checked={sameDomainAsSource}
+                                            onCheckedChange={
+                                                setSameDomainAsSource
+                                            }
+                                        />
+                                    </SettingsFormCell>
+
+                                    <SettingsFormCell span="full">
+                                        <FormField
+                                            control={form.control}
+                                            name="destinationHost"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t(
+                                                            "redirectDestinationHost"
+                                                        )}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            autoComplete="off"
+                                                            placeholder="https://example.com"
+                                                            readOnly={
+                                                                sameDomainAsSource
+                                                            }
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormDescription>
+                                                        {t(
+                                                            "redirectDestinationHostDescription"
+                                                        )}
+                                                    </FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </SettingsFormCell>
+
+                                    <SettingsFormCell span="full">
                                         <FormField
                                             control={form.control}
                                             name="rewritePath"
@@ -840,40 +883,6 @@ export default function RedirectForm({
                                         />
                                     </SettingsFormCell>
 
-                                    <SettingsFormCell span="half">
-                                        <FormField
-                                            control={form.control}
-                                            name="priority"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        {t("priority")}
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            type="number"
-                                                            min={1}
-                                                            max={1000}
-                                                            {...field}
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .valueAsNumber
-                                                                )
-                                                            }
-                                                        />
-                                                    </FormControl>
-                                                    <FormDescription>
-                                                        {t(
-                                                            "redirectPriorityDescription"
-                                                        )}
-                                                    </FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </SettingsFormCell>
-
                                     <SettingsFormCell span="full">
                                         <FormField
                                             control={form.control}
@@ -903,27 +912,26 @@ export default function RedirectForm({
                                         />
                                     </SettingsFormCell>
                                 </SettingsFormGrid>
-                            </form>
-                        </Form>
-                    </SettingsSectionForm>
-                </SettingsSectionBody>
-            </SettingsSection>
+                            </SettingsSectionForm>
+                        </SettingsSectionBody>
+                    </SettingsSection>
 
-            <div className="flex justify-end space-x-2 mt-8">
-                <Button type="button" variant="outline" asChild>
-                    <Link href={`/${orgId}/settings/redirects`}>
-                        {t("cancel")}
-                    </Link>
-                </Button>
-                <Button
-                    type="submit"
-                    form="redirect-form"
-                    loading={saveLoading}
-                    disabled={saveLoading}
-                >
-                    {isEditing ? t("saveSettings") : t("redirectAdd")}
-                </Button>
-            </div>
+                    <div className="flex justify-end space-x-2 mt-8">
+                        <Button type="button" variant="outline" asChild>
+                            <Link href={`/${orgId}/settings/redirects`}>
+                                {t("cancel")}
+                            </Link>
+                        </Button>
+                        <Button
+                            type="submit"
+                            loading={saveLoading}
+                            disabled={saveLoading}
+                        >
+                            {isEditing ? t("saveSettings") : t("redirectAdd")}
+                        </Button>
+                    </div>
+                </form>
+            </Form>
         </SettingsContainer>
     );
 }
