@@ -483,7 +483,9 @@ export default function RedirectForm({
                                                             defaultDomainId={
                                                                 redirect?.domainId
                                                             }
-                                                            allowWildcard
+                                                            allowWildcard={
+                                                                false
+                                                            }
                                                             defaultSubdomain={
                                                                 redirect?.subdomain
                                                             }
