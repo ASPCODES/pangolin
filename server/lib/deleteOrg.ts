@@ -70,6 +70,10 @@ export async function deleteOrgById(
     let siteCount: number | null = null;
     let userCount: number | null = null;
     let remoteExitNodeCount: number | null = null;
+    // billingOrgId has no FK, so the billing org may already be gone (e.g.
+    // a partially failed account deletion). Writing usage for it would
+    // violate the usage FK and abort the transaction.
+    let billingOrgExists = false;
 
     await db.transaction(async (trx) => {
         for (const site of orgSites) {
@@ -161,7 +165,17 @@ export async function deleteOrgById(
                 .where(inArray(domains.domainId, domainIdsToDelete));
         }
 
-        await usageService.add(orgId, LimitId.ORGANIZATIONS, -1, trx); // here we are decreasing the org count BEFORE deleting the org because we need to still be able to get the org to get the billing org inside of here
+        const [billingOrg] = org.billingOrgId
+            ? await trx
+                  .select({ orgId: orgs.orgId })
+                  .from(orgs)
+                  .where(eq(orgs.orgId, org.billingOrgId))
+                  .limit(1)
+            : [org];
+        billingOrgExists = !!billingOrg;
+        if (billingOrgExists) {
+            await usageService.add(orgId, LimitId.ORGANIZATIONS, -1, trx); // here we are decreasing the org count BEFORE deleting the org because we need to still be able to get the org to get the billing org inside of here
+        }
 
         await trx.delete(orgs).where(eq(orgs.orgId, orgId));
 
@@ -205,7 +219,11 @@ export async function deleteOrgById(
         }
     });
 
-    if (org.billingOrgId) {
+    if (
+        org.billingOrgId &&
+        org.billingOrgId !== orgId &&
+        billingOrgExists
+    ) {
         usageService.updateCount(
             org.billingOrgId,
             LimitId.DOMAINS,
