@@ -33,6 +33,8 @@ export type ResourceWithTargets = Pick<
     | "domainId"
     | "enabled"
     | "stickySession"
+    | "loadBalancingStrategy"
+    | "mtlsEnabled"
     | "tlsServerName"
     | "setHostHeader"
     | "enableProxy"
