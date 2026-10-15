@@ -11,7 +11,7 @@
  * This file is not licensed under the AGPLv3.
  */
 
-import regionalCache from "#private/lib/cache";
+import { regionalCache } from "#private/lib/cache";
 import privateConfig from "#private/lib/config";
 import license from "#private/license/license";
 import { build } from "@server/build";
