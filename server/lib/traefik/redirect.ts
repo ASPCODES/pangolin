@@ -57,10 +57,6 @@ export function buildRedirectConfig(params: {
     for (const redirect of redirects) {
         const routerName = `${redirect.redirectId}-redirect-${redirect.name}-router`;
 
-        logger.debug(
-            `Processing redirect ${redirect.name} with domain ${redirect.fullDomain}`
-        );
-
         if (!redirect.enabled) {
             logger.debug(
                 `Redirect ${redirect.name} is disabled, skipping Traefik config`
