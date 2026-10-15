@@ -290,6 +290,7 @@ export default function RedirectForm({
                     title: t("success"),
                     description: t("redirectUpdated")
                 });
+                router.refresh();
             } else {
                 const res = await api.put<
                     AxiosResponse<CreateRedirectResponse>
@@ -298,8 +299,9 @@ export default function RedirectForm({
                     title: t("success"),
                     description: t("redirectCreated")
                 });
+                const niceId = res.data.data.redirect.niceId;
+                router.push(`/${orgId}/settings/redirects/${niceId}`);
             }
-            router.push(`/${orgId}/settings/redirects/`);
         } catch (e) {
             toast({
                 variant: "destructive",

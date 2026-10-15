@@ -30,6 +30,7 @@ export type ListRedirectsResponse = PaginatedResponse<{
         resourceName: string | null;
         resourceNiceId: string | null;
         resourceFullDomain: string | null;
+        resourceSsl: boolean | null;
         resourceDomainId: string | null;
         domainId: string | null;
         baseDomain: string | null;
@@ -236,6 +237,7 @@ export async function listRedirects(
                 resourceName: resources.name,
                 resourceNiceId: resources.niceId,
                 resourceFullDomain: resources.fullDomain,
+                resourceSsl: resources.ssl,
                 resourceDomainId: resources.domainId,
                 domainId: redirects.domainId,
                 baseDomain: domains.baseDomain

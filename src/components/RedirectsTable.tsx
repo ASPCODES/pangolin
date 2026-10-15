@@ -89,11 +89,13 @@ export type RedirectRow = {
     rewritePathType: "exact" | "prefix" | "regex" | "stripPrefix" | null;
     priority: number | null;
     permanent: boolean;
+    ssl: boolean;
     enabled: boolean;
     resourceId: number | null;
     resourceName: string | null;
     resourceNiceId: string | null;
     resourceFullDomain: string | null;
+    resourceSsl: boolean | null;
     resourceDomainId: string | null;
     domainId: string | null;
     baseDomain: string | null;
@@ -315,14 +317,7 @@ export default function RedirectsTable({
                         </Button>
                     );
                 },
-                cell: ({ row }) => (
-                    <Link
-                        href={`/${orgId}/settings/redirects/${row.original.niceId}`}
-                        className="hover:underline"
-                    >
-                        {row.original.name}
-                    </Link>
-                )
+                cell: ({ row }) => <span>{row.original.name}</span>
             },
             {
                 id: "niceId",
@@ -453,7 +448,13 @@ export default function RedirectsTable({
                             ? withPrefixGlob(redirect.matchPath)
                             : redirect.matchPath
                         : "";
-                    const source = `${host ?? ""}${matchPath}`;
+                    // Resource-attached redirects inherit the resource's ssl.
+                    const sourceSsl = redirect.resourceId
+                        ? (redirect.resourceSsl ?? true)
+                        : redirect.ssl;
+                    const source = host
+                        ? `${sourceSsl ? "https" : "http"}://${host}${matchPath}`
+                        : matchPath;
 
                     if (!source) {
                         return <span>-</span>;
@@ -694,7 +695,8 @@ export default function RedirectsTable({
                 isRefreshing={isRefreshing || isFiltering}
                 rowCount={rowCount}
                 columnVisibility={{
-                    niceId: false
+                    niceId: false,
+                    priority: false
                 }}
                 enableColumnVisibility
                 stickyLeftColumn="name"
