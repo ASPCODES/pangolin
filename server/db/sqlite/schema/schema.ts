@@ -1443,27 +1443,6 @@ export const resourceWhitelist = sqliteTable("resourceWhitelist", {
         .references(() => resources.resourceId, { onDelete: "cascade" })
 });
 
-export const resourceMtlsCertificates = sqliteTable(
-    "resourceMtlsCertificates",
-    {
-        mtlsCertificateId: integer("mtlsCertificateId").primaryKey({
-            autoIncrement: true
-        }),
-        resourceId: integer("resourceId")
-            .notNull()
-            .references(() => resources.resourceId, { onDelete: "cascade" }),
-        name: text("name"),
-        certificate: text("certificate").notNull(),
-        subject: text("subject"),
-        issuer: text("issuer"),
-        serialNumber: text("serialNumber"),
-        fingerprint: text("fingerprint"),
-        notBefore: integer("notBefore"),
-        notAfter: integer("notAfter"),
-        createdAt: integer("createdAt").notNull()
-    }
-);
-
 export const resourceOtp = sqliteTable("resourceOtp", {
     otpId: integer("otpId").primaryKey({
         autoIncrement: true
@@ -2150,9 +2129,6 @@ export type ResourceHeaderAuthExtendedCompatibility = InferSelectModel<
 export type ResourceOtp = InferSelectModel<typeof resourceOtp>;
 export type ResourceAccessToken = InferSelectModel<typeof resourceAccessToken>;
 export type ResourceWhitelist = InferSelectModel<typeof resourceWhitelist>;
-export type ResourceMtlsCertificate = InferSelectModel<
-    typeof resourceMtlsCertificates
->;
 export type VersionMigration = InferSelectModel<typeof versionMigrations>;
 export type ResourceRule = InferSelectModel<typeof resourceRules>;
 export type Domain = InferSelectModel<typeof domains>;
