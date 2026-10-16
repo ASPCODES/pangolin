@@ -455,7 +455,7 @@ export default function ResourceMtlsPage() {
                                     onCheckedChange={setMtlsEnabled}
                                 />
 
-                                <Alert variant="info">
+                                {/* <Alert variant="info">
                                     <ShieldCheck className="h-4 w-4" />
                                     <AlertTitle>
                                         {t("mtlsForwardedHeadersTitle")}
@@ -464,7 +464,7 @@ export default function ResourceMtlsPage() {
                                         {t("mtlsForwardedHeadersDescription")}{" "}
                                         {t("mtlsHandshakeNote")}
                                     </AlertDescription>
-                                </Alert>
+                                </Alert> */}
                             </div>
                         </SettingsSectionBody>
 
