@@ -17,7 +17,7 @@ import { useEnvContext } from "@app/hooks/useEnvContext";
 import { toast } from "@app/hooks/useToast";
 import { createApiClient, formatAxiosError } from "@app/lib/api";
 import { cn } from "@app/lib/cn";
-import { Download, Loader2 } from "lucide-react";
+import { Check, Copy, Download, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 type ExportBlueprintModalProps = {
@@ -40,6 +40,7 @@ export default function ExportBlueprintModal({
     const [loading, setLoading] = useState(false);
     const [contents, setContents] = useState<string | null>(null);
     const [fileName, setFileName] = useState(resourceName);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         if (!open) {
@@ -68,6 +69,20 @@ export default function ExportBlueprintModal({
             .finally(() => setLoading(false));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, endpoint]);
+
+    async function handleCopy() {
+        if (!contents) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(contents);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error(t("copyTextFailed"), err);
+        }
+    }
 
     function handleDownload() {
         if (!contents) {
@@ -124,6 +139,18 @@ export default function ExportBlueprintModal({
                     <CredenzaClose asChild>
                         <Button variant="outline">{t("close")}</Button>
                     </CredenzaClose>
+                    <Button
+                        variant="outline"
+                        onClick={handleCopy}
+                        disabled={!contents || loading}
+                    >
+                        {copied ? (
+                            <Check className="mr-2 h-4 w-4 text-green-500" />
+                        ) : (
+                            <Copy className="mr-2 h-4 w-4" />
+                        )}
+                        {t("copy")}
+                    </Button>
                     <Button
                         onClick={handleDownload}
                         disabled={!contents || loading}
