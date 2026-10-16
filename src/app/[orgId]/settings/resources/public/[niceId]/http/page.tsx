@@ -272,6 +272,29 @@ function ProxyResourceHttpForm({
                                 <SettingsFormCell span="half">
                                     <FormField
                                         control={form.control}
+                                        name="setHostHeader"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    {t("proxyCustomHeader")}
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} />
+                                                </FormControl>
+                                                <FormDescription>
+                                                    {t(
+                                                        "proxyCustomHeaderDescription"
+                                                    )}
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </SettingsFormCell>
+
+                                <SettingsFormCell span="half">
+                                    <FormField
+                                        control={form.control}
                                         name="tlsServerName"
                                         render={({ field }) => (
                                             <FormItem>
@@ -292,7 +315,7 @@ function ProxyResourceHttpForm({
                                     />
                                 </SettingsFormCell>
 
-                                <SettingsFormCell span="full">
+                                <SettingsFormCell span="half">
                                     <FormField
                                         control={form.control}
                                         name="stickySession"
@@ -362,29 +385,6 @@ function ProxyResourceHttpForm({
                                                 <FormDescription>
                                                     {t(
                                                         `loadBalancingStrategy_${field.value}_description`
-                                                    )}
-                                                </FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </SettingsFormCell>
-
-                                <SettingsFormCell span="half">
-                                    <FormField
-                                        control={form.control}
-                                        name="setHostHeader"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>
-                                                    {t("proxyCustomHeader")}
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} />
-                                                </FormControl>
-                                                <FormDescription>
-                                                    {t(
-                                                        "proxyCustomHeaderDescription"
                                                     )}
                                                 </FormDescription>
                                                 <FormMessage />
