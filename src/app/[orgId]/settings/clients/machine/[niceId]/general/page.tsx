@@ -41,12 +41,7 @@ import { tierMatrix } from "@server/lib/billing/tierMatrix";
 
 const GeneralFormSchema = z.object({
     name: z.string().nonempty("Name is required"),
-    niceId: z.string().min(1).max(255).optional()
-});
-
-type GeneralFormValues = z.infer<typeof GeneralFormSchema>;
-
-const RolesFormSchema = z.object({
+    niceId: z.string().min(1).max(255).optional(),
     roles: z.array(
         z.object({
             id: z.string(),
@@ -56,7 +51,7 @@ const RolesFormSchema = z.object({
     )
 });
 
-type RolesFormValues = z.infer<typeof RolesFormSchema>;
+type GeneralFormValues = z.infer<typeof GeneralFormSchema>;
 
 export default function GeneralPage() {
     const t = useTranslations();
@@ -67,25 +62,19 @@ export default function GeneralPage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const router = useRouter();
     const [, startTransition] = useTransition();
-    const [savingRoles, setSavingRoles] = useState(false);
     const { isPaidUser } = usePaidStatus();
     const canAssignRoles = isPaidUser(tierMatrix.fullRbac);
-
-    const rolesForm = useForm({
-        resolver: zodResolver(RolesFormSchema),
-        defaultValues: {
-            roles: (client?.roles ?? []).map((r) => ({
-                id: r.roleId.toString(),
-                text: r.name
-            }))
-        }
-    });
+    const showRoles = !env.flags.disableEnterpriseFeatures;
 
     const form = useForm({
         resolver: zodResolver(GeneralFormSchema),
         defaultValues: {
             name: client?.name,
-            niceId: client?.niceId || ""
+            niceId: client?.niceId || "",
+            roles: (client?.roles ?? []).map((r) => ({
+                id: r.roleId.toString(),
+                text: r.name
+            }))
         },
         mode: "onChange"
     });
@@ -116,15 +105,33 @@ export default function GeneralPage() {
     }, [client?.clientId, client?.orgId, api, form]);
 
     async function onSubmit(data: GeneralFormValues) {
+        if (!client?.clientId) return;
         setLoading(true);
 
-        try {
-            await api.post(`/client/${client?.clientId}`, {
-                name: data.name,
-                niceId: data.niceId
-            });
+        const saveRoles = showRoles && canAssignRoles;
+        const roleIds = data.roles.map((r) => parseInt(r.id, 10));
 
-            updateClient({ name: data.name, niceId: data.niceId });
+        try {
+            await Promise.all([
+                api.post(`/client/${client.clientId}`, {
+                    name: data.name,
+                    niceId: data.niceId
+                }),
+                saveRoles
+                    ? api.post(`/client/${client.clientId}/roles`, { roleIds })
+                    : Promise.resolve()
+            ]);
+
+            updateClient({
+                name: data.name,
+                niceId: data.niceId,
+                ...(saveRoles && {
+                    roles: data.roles.map((r) => ({
+                        roleId: parseInt(r.id, 10),
+                        name: r.text
+                    }))
+                })
+            });
 
             toast({
                 title: t("clientUpdated"),
@@ -140,41 +147,6 @@ export default function GeneralPage() {
             });
         } finally {
             setLoading(false);
-        }
-    }
-
-    async function onSubmitRoles(data: RolesFormValues) {
-        if (!client?.clientId) return;
-        setSavingRoles(true);
-
-        try {
-            const roleIds = data.roles.map((r) => parseInt(r.id, 10));
-            await api.post(`/client/${client.clientId}/roles`, { roleIds });
-
-            updateClient({
-                roles: data.roles.map((r) => ({
-                    roleId: parseInt(r.id, 10),
-                    name: r.text
-                }))
-            });
-
-            toast({
-                title: t("machineClientRolesUpdated"),
-                description: t("machineClientRolesUpdatedDescription")
-            });
-
-            router.refresh();
-        } catch (e) {
-            toast({
-                variant: "destructive",
-                title: t("machineClientRolesUpdateFailed"),
-                description: formatAxiosError(
-                    e,
-                    t("machineClientRolesUpdateError")
-                )
-            });
-        } finally {
-            setSavingRoles(false);
         }
     }
 
@@ -237,6 +209,10 @@ export default function GeneralPage() {
                 </SettingsSectionHeader>
 
                 <SettingsSectionBody>
+                    {showRoles && (
+                        <PaidFeaturesAlert tiers={tierMatrix.fullRbac} />
+                    )}
+
                     <SettingsSectionForm>
                         <Form {...form}>
                             <form
@@ -279,6 +255,18 @@ export default function GeneralPage() {
                                         </FormItem>
                                     )}
                                 />
+
+                                {showRoles && (
+                                    <OrgRolesTagField
+                                        form={form}
+                                        name="roles"
+                                        orgId={client.orgId}
+                                        supportsMultipleRolesPerUser={true}
+                                        showMultiRolePaywallMessage={false}
+                                        paywallMessage=""
+                                        disabled={!canAssignRoles}
+                                    />
+                                )}
                             </form>
                         </Form>
                     </SettingsSectionForm>
@@ -295,56 +283,6 @@ export default function GeneralPage() {
                     </Button>
                 </SettingsSectionFooter>
             </SettingsSection>
-
-            {!env.flags.disableEnterpriseFeatures && (
-                <SettingsSection>
-                    <SettingsSectionHeader>
-                        <SettingsSectionTitle>
-                            {t("roles")}
-                        </SettingsSectionTitle>
-                        <SettingsSectionDescription>
-                            {t("machineClientRolesDescription")}
-                        </SettingsSectionDescription>
-                    </SettingsSectionHeader>
-
-                    <SettingsSectionBody>
-                        <PaidFeaturesAlert tiers={tierMatrix.fullRbac} />
-
-                        <SettingsSectionForm>
-                            <Form {...rolesForm}>
-                                <form
-                                    onSubmit={rolesForm.handleSubmit(
-                                        onSubmitRoles
-                                    )}
-                                    className="space-y-4"
-                                    id="roles-settings-form"
-                                >
-                                    <OrgRolesTagField
-                                        form={rolesForm}
-                                        name="roles"
-                                        orgId={client.orgId}
-                                        supportsMultipleRolesPerUser={true}
-                                        showMultiRolePaywallMessage={false}
-                                        paywallMessage=""
-                                        disabled={!canAssignRoles}
-                                    />
-                                </form>
-                            </Form>
-                        </SettingsSectionForm>
-                    </SettingsSectionBody>
-
-                    <SettingsSectionFooter>
-                        <Button
-                            type="submit"
-                            form="roles-settings-form"
-                            loading={savingRoles}
-                            disabled={savingRoles || !canAssignRoles}
-                        >
-                            {t("saveSettings")}
-                        </Button>
-                    </SettingsSectionFooter>
-                </SettingsSection>
-            )}
         </SettingsContainer>
     );
 }
