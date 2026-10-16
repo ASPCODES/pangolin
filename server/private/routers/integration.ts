@@ -21,7 +21,7 @@ import * as policy from "#private/routers/policy";
 import * as eventStreamingDestination from "#private/routers/eventStreamingDestination";
 import * as alertRule from "#private/routers/alertRule";
 import * as healthChecks from "#private/routers/healthChecks";
-
+import * as resource from "#private/routers/resource";
 import {
     verifyApiKeyHasAction,
     verifyApiKeyIsRoot,
@@ -32,7 +32,8 @@ import {
     verifyApiKeyClientAccess,
     verifyApiKeySiteProvisioningKeyAccess,
     verifyApiKeyResourcePolicyAccess,
-    verifyLimits
+    verifyLimits,
+    verifyApiKeyResourceAccess
 } from "@server/middlewares";
 import * as user from "#private/routers/user";
 import * as client from "#private/routers/client";
@@ -465,4 +466,37 @@ authenticated.get(
     verifyApiKeyOrgAccess,
     verifyApiKeyHasAction(ActionsEnum.getTarget),
     healthChecks.getHealthCheckStatusHistory
+);
+
+authenticated.put(
+    [
+        "/resource/:resourceId/mtls/certificate",
+        "/public-resource/:resourceId/mtls/certificate"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.createResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.createResourceMtlsCertificate),
+    resource.createResourceMtlsCertificate
+);
+
+authenticated.get(
+    [
+        "/resource/:resourceId/mtls/certificates",
+        "/public-resource/:resourceId/mtls/certificates"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyApiKeyHasAction(ActionsEnum.listResourceMtlsCertificates),
+    resource.listResourceMtlsCertificates
+);
+
+authenticated.delete(
+    [
+        "/resource/:resourceId/mtls/certificate/:mtlsCertificateId",
+        "/public-resource/:resourceId/mtls/certificate/:mtlsCertificateId"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyApiKeyHasAction(ActionsEnum.deleteResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.deleteResourceMtlsCertificate),
+    resource.deleteResourceMtlsCertificate
 );

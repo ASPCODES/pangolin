@@ -14,6 +14,7 @@ import {
     MAX_MTLS_CERTIFICATES_PER_RESOURCE,
     parseCaCertificates
 } from "@server/lib/mtlsCertificate";
+import { CreateResourceMtlsCertificateResponse } from "@server/routers/resource/types";
 
 const createResourceMtlsCertificateParamsSchema = z.strictObject({
     resourceId: z.coerce.number().int().positive()
@@ -23,21 +24,6 @@ const createResourceMtlsCertificateBodySchema = z.strictObject({
     name: z.string().min(1).max(255).optional(),
     certificate: z.string().min(1).max(100_000)
 });
-
-export type CreateResourceMtlsCertificateResponse = {
-    certificates: {
-        mtlsCertificateId: number;
-        resourceId: number;
-        name: string | null;
-        subject: string | null;
-        issuer: string | null;
-        serialNumber: string | null;
-        fingerprint: string | null;
-        notBefore: number | null;
-        notAfter: number | null;
-        createdAt: number;
-    }[];
-};
 
 const description =
     "Add a trusted CA certificate that clients must present a certificate signed by when mTLS is enabled on a resource. Accepts a PEM bundle; each certificate in the bundle is stored separately.";
@@ -164,7 +150,9 @@ export async function createResourceMtlsCertificate(
             .from(resourceMtlsCertificates)
             .where(eq(resourceMtlsCertificates.resourceId, resourceId));
 
-        const existingFingerprints = new Set(existing.map((c) => c.fingerprint));
+        const existingFingerprints = new Set(
+            existing.map((c) => c.fingerprint)
+        );
         const newCerts = parsedCerts.filter(
             (c) => !existingFingerprints.has(c.fingerprint)
         );

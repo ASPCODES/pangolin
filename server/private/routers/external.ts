@@ -35,6 +35,7 @@ import * as eventStreamingDestination from "#private/routers/eventStreamingDesti
 import * as alertRule from "#private/routers/alertRule";
 import * as healthChecks from "#private/routers/healthChecks";
 import * as policy from "#private/routers/policy";
+import * as resource from "#private/routers/resource";
 
 import {
     verifyOrgAccess,
@@ -49,7 +50,8 @@ import {
     verifySiteProvisioningKeyAccess,
     verifyIsLoggedInUser,
     verifyAdmin,
-    verifyResourcePolicyAccess
+    verifyResourcePolicyAccess,
+    verifyResourceAccess
 } from "@server/middlewares";
 import { ActionsEnum } from "@server/auth/actions";
 import {
@@ -892,4 +894,26 @@ authenticated.post(
     "/org/:orgId/logs/access/attempt",
     verifyOrgAccess,
     logs.logAccessAuditAttempt
+);
+
+authenticated.put(
+    "/resource/:resourceId/mtls/certificate",
+    verifyResourceAccess,
+    verifyLimits,
+    verifyUserHasAction(ActionsEnum.createResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.createResourceMtlsCertificate),
+    resource.createResourceMtlsCertificate
+);
+authenticated.get(
+    "/resource/:resourceId/mtls/certificates",
+    verifyResourceAccess,
+    verifyUserHasAction(ActionsEnum.listResourceMtlsCertificates),
+    resource.listResourceMtlsCertificates
+);
+authenticated.delete(
+    "/resource/:resourceId/mtls/certificate/:mtlsCertificateId",
+    verifyResourceAccess,
+    verifyUserHasAction(ActionsEnum.deleteResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.deleteResourceMtlsCertificate),
+    resource.deleteResourceMtlsCertificate
 );

@@ -8,6 +8,7 @@ import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import { OpenAPITags, registry } from "@server/openApi";
+import { ListResourceMtlsCertificatesResponse } from "@server/routers/resource/types";
 
 const listResourceMtlsCertificatesParamsSchema = z.strictObject({
     resourceId: z.coerce.number().int().positive()
@@ -31,10 +32,6 @@ function queryResourceMtlsCertificates(resourceId: number) {
         .where(eq(resourceMtlsCertificates.resourceId, resourceId))
         .orderBy(asc(resourceMtlsCertificates.mtlsCertificateId));
 }
-
-export type ListResourceMtlsCertificatesResponse = {
-    certificates: Awaited<ReturnType<typeof queryResourceMtlsCertificates>>;
-};
 
 const description = "List the trusted CA certificates for a resource's mTLS.";
 
@@ -66,8 +63,9 @@ export async function listResourceMtlsCertificates(
     next: NextFunction
 ): Promise<any> {
     try {
-        const parsedParams =
-            listResourceMtlsCertificatesParamsSchema.safeParse(req.params);
+        const parsedParams = listResourceMtlsCertificatesParamsSchema.safeParse(
+            req.params
+        );
         if (!parsedParams.success) {
             return next(
                 createHttpError(

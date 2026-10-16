@@ -8,6 +8,7 @@ import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import { OpenAPITags, registry } from "@server/openApi";
+import { DeleteResourceMtlsCertificateResponse } from "@server/routers/resource/types";
 
 const deleteResourceMtlsCertificateParamsSchema = z.strictObject({
     resourceId: z.coerce.number().int().positive(),
@@ -38,11 +39,6 @@ registry.registerPath({
     },
     responses: {}
 });
-
-export type DeleteResourceMtlsCertificateResponse = {
-    // true when removing the last CA certificate forced mTLS off
-    mtlsDisabled: boolean;
-};
 
 export async function deleteResourceMtlsCertificate(
     req: Request,
