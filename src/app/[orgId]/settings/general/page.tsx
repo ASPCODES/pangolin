@@ -36,7 +36,9 @@ import {
     SettingsSectionDescription,
     SettingsSectionBody,
     SettingsSectionForm,
-    SettingsSectionFooter
+    SettingsSectionFooter,
+    SettingsFormGrid,
+    SettingsFormCell
 } from "@app/components/Settings";
 import { useUserContext } from "@app/hooks/useUserContext";
 import { useTranslations } from "next-intl";
@@ -242,7 +244,7 @@ function GeneralSectionForm({ org }: SectionFormProps) {
                 </SettingsSectionDescription>
             </SettingsSectionHeader>
             <SettingsSectionBody>
-                <SettingsSectionForm>
+                <SettingsSectionForm variant="half">
                     <Form {...form}>
                         <form
                             onSubmit={(e) => {
@@ -251,71 +253,86 @@ function GeneralSectionForm({ org }: SectionFormProps) {
                                     formAction();
                                 });
                             }}
-                            className="grid gap-4"
                             id="org-general-settings-form"
                         >
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t("name")}</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                        <FormDescription>
-                                            {t("orgDisplayName")}
-                                        </FormDescription>
-                                    </FormItem>
-                                )}
-                            />
+                            <SettingsFormGrid>
+                                <SettingsFormCell span="half">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    {t("name")}
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                                <FormDescription>
+                                                    {t("orgDisplayName")}
+                                                </FormDescription>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </SettingsFormCell>
 
-                            <PaidFeaturesAlert
-                                tiers={tierMatrix.newtAutoUpdate}
-                            />
-                            {!env.flags.disableEnterpriseFeatures && (
-                                <FormField
-                                    control={form.control}
-                                    name="settingsEnableGlobalNewtAutoUpdate"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <SwitchInput
-                                                    id="settings-enable-global-newt-auto-update"
-                                                    label={t("newtAutoUpdate")}
-                                                    checked={field.value}
-                                                    onCheckedChange={
-                                                        field.onChange
-                                                    }
-                                                    disabled={
-                                                        !hasAutoUpdateFeature
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormDescription>
-                                                {t("newtAutoUpdateDescription")}{" "}
-                                                <a
-                                                    href="https://docs.pangolin.net/manage/sites/auto-update"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-primary hover:underline inline-flex items-center gap-1"
-                                                >
-                                                    {t("learnMore")}
-                                                    <ExternalLink className="size-3.5 shrink-0" />
-                                                </a>
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            )}
+                                <SettingsFormCell span="full">
+                                    <PaidFeaturesAlert
+                                        tiers={tierMatrix.newtAutoUpdate}
+                                    />
+                                </SettingsFormCell>
+                                {!env.flags.disableEnterpriseFeatures && (
+                                    <SettingsFormCell span="full">
+                                        <FormField
+                                            control={form.control}
+                                            name="settingsEnableGlobalNewtAutoUpdate"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <SwitchInput
+                                                            id="settings-enable-global-newt-auto-update"
+                                                            label={t(
+                                                                "newtAutoUpdate"
+                                                            )}
+                                                            checked={
+                                                                field.value
+                                                            }
+                                                            onCheckedChange={
+                                                                field.onChange
+                                                            }
+                                                            disabled={
+                                                                !hasAutoUpdateFeature
+                                                            }
+                                                        />
+                                                    </FormControl>
+                                                    <FormDescription>
+                                                        {t(
+                                                            "newtAutoUpdateDescription"
+                                                        )}{" "}
+                                                        <a
+                                                            href="https://docs.pangolin.net/manage/sites/auto-update"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-primary hover:underline inline-flex items-center gap-1"
+                                                        >
+                                                            {t("learnMore")}
+                                                            <ExternalLink className="size-3.5 shrink-0" />
+                                                        </a>
+                                                    </FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </SettingsFormCell>
+                                )}
+                            </SettingsFormGrid>
                         </form>
                     </Form>
                 </SettingsSectionForm>
             </SettingsSectionBody>
 
-            <div className="flex justify-end gap-2 mt-4">
+            <SettingsSectionFooter>
                 <Button
                     type="submit"
                     form="org-general-settings-form"
@@ -324,7 +341,7 @@ function GeneralSectionForm({ org }: SectionFormProps) {
                 >
                     {t("saveSettings")}
                 </Button>
-            </div>
+            </SettingsSectionFooter>
         </SettingsSection>
     );
 }
