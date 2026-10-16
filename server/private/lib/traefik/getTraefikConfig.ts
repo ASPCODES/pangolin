@@ -612,9 +612,9 @@ export async function getTraefikConfig(
         const transportName = `${key}-transport`;
         const headersMiddlewareName = `${key}-headers-middleware`;
 
-        logger.debug(
-            `Processing resource ${resource.name} with domain ${fullDomain} and ${targets.length} targets`
-        );
+        // logger.debug(
+        //     `Processing resource ${resource.name} with domain ${fullDomain} and ${targets.length} targets`
+        // );
 
         if (!resource.enabled) {
             logger.debug(
