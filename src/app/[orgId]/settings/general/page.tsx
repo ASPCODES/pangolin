@@ -19,7 +19,6 @@ import {
     FormMessage
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,14 +40,12 @@ import {
 } from "@app/components/Settings";
 import { useUserContext } from "@app/hooks/useUserContext";
 import { useTranslations } from "next-intl";
-import { build } from "@server/build";
 import type { OrgContextType } from "@app/contexts/orgContext";
 import { SwitchInput } from "@app/components/SwitchInput";
 import { usePaidStatus } from "@app/hooks/usePaidStatus";
 import { tierMatrix, TierFeature } from "@server/lib/billing/tierMatrix";
 import { PaidFeaturesAlert } from "@app/components/PaidFeaturesAlert";
 import { ExternalLink } from "lucide-react";
-import { env } from "process";
 
 // Schema for general organization settings
 const GeneralFormSchema = z.object({
