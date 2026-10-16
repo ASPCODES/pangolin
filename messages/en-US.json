@@ -795,6 +795,8 @@
     "targetStickySessions": "Enable Sticky Sessions",
     "targetStickySessionsDescription": "Keep connections on the same backend target for their entire session.",
     "loadBalancingStrategy": "Load Balancing Strategy",
+    "loadBalancingStrategySearch": "Search strategies...",
+    "loadBalancingStrategyNotFound": "No strategy found",
     "loadBalancingStrategy_wrr": "Round Robin",
     "loadBalancingStrategy_wrr_description": "Distribute requests evenly across targets in rotation.",
     "loadBalancingStrategy_p2c": "Power of Two Choices",

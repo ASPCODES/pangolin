@@ -3,12 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@app/components/ui/select";
+    DescribedSelect,
+    type DescribedSelectOption
+} from "@app/components/DescribedSelect";
 import { HeadersInput } from "@app/components/HeadersInput";
 import {
     SettingsContainer,
@@ -53,6 +50,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const LOAD_BALANCING_STRATEGIES = ["wrr", "p2c", "hrw", "leasttime"] as const;
+type LoadBalancingStrategy = (typeof LOAD_BALANCING_STRATEGIES)[number];
 
 export default function ReverseProxyTargetsPage() {
     const params = useParams();
@@ -150,6 +148,13 @@ function ProxyResourceHttpForm({
         },
         mode: "onChange"
     });
+
+    const loadBalancingOptions: DescribedSelectOption<LoadBalancingStrategy>[] =
+        LOAD_BALANCING_STRATEGIES.map((strategy) => ({
+            value: strategy,
+            title: t(`loadBalancingStrategy_${strategy}`),
+            description: t(`loadBalancingStrategy_${strategy}_description`)
+        }));
 
     const [, formAction, saveLoading] = useActionState(onSubmit, null);
     const [requestHeadersValid, setRequestHeadersValid] = useState(true);
@@ -352,41 +357,23 @@ function ProxyResourceHttpForm({
                                                         "loadBalancingStrategy"
                                                     )}
                                                 </FormLabel>
-                                                <Select
-                                                    value={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {LOAD_BALANCING_STRATEGIES.map(
-                                                            (strategy) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        strategy
-                                                                    }
-                                                                    value={
-                                                                        strategy
-                                                                    }
-                                                                >
-                                                                    {t(
-                                                                        `loadBalancingStrategy_${strategy}`
-                                                                    )}
-                                                                </SelectItem>
-                                                            )
+                                                <FormControl>
+                                                    <DescribedSelect<LoadBalancingStrategy>
+                                                        options={
+                                                            loadBalancingOptions
+                                                        }
+                                                        value={field.value}
+                                                        onChange={
+                                                            field.onChange
+                                                        }
+                                                        searchPlaceholder={t(
+                                                            "loadBalancingStrategySearch"
                                                         )}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormDescription>
-                                                    {t(
-                                                        `loadBalancingStrategy_${field.value}_description`
-                                                    )}
-                                                </FormDescription>
+                                                        emptyMessage={t(
+                                                            "loadBalancingStrategyNotFound"
+                                                        )}
+                                                    />
+                                                </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
