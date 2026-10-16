@@ -365,9 +365,13 @@ async function buildAiProvidersAndBudget(input:
     return { aiProvidersConfig, aiBudgetConfig };
 }
 
-export async function generatePublicResourceBlueprintYaml(
+export async function buildPublicResourceBlueprintConfig(
     resourceId: number
-): Promise<{ niceId: string; contents: string }> {
+): Promise<{
+    niceId: string;
+    config: Record<string, any>;
+    notes: string[];
+}> {
     const [resource] = await db
         .select()
         .from(resources)
@@ -539,26 +543,32 @@ export async function generatePublicResourceBlueprintYaml(
         }
     }
 
-    const config = {
-        "proxy-resources": {
-            [resource.niceId]: resourceConfig
-        }
-    };
+    return { niceId: resource.niceId, config: resourceConfig, notes };
+}
 
-    const notesPrefix =
-        notes.length > 0
-            ? notes.map((n) => `# ${n}`).join("\n") + "\n\n"
-            : "";
+export function formatBlueprintNotes(notes: string[]): string {
+    return notes.length > 0
+        ? notes.map((n) => `# ${n}`).join("\n") + "\n\n"
+        : "";
+}
+
+export async function generatePublicResourceBlueprintYaml(
+    resourceId: number
+): Promise<{ niceId: string; contents: string }> {
+    const { niceId, config, notes } =
+        await buildPublicResourceBlueprintConfig(resourceId);
 
     return {
-        niceId: resource.niceId,
-        contents: notesPrefix + stringifyYaml(config)
+        niceId,
+        contents:
+            formatBlueprintNotes(notes) +
+            stringifyYaml({ "proxy-resources": { [niceId]: config } })
     };
 }
 
-export async function generatePrivateResourceBlueprintYaml(
+export async function buildPrivateResourceBlueprintConfig(
     siteResourceId: number
-): Promise<{ niceId: string; contents: string }> {
+): Promise<{ niceId: string; config: Record<string, any> }> {
     const [siteResource] = await db
         .select()
         .from(siteResources)
@@ -676,14 +686,17 @@ export async function generatePrivateResourceBlueprintYaml(
         }
     }
 
-    const config = {
-        "client-resources": {
-            [siteResource.niceId]: resourceConfig
-        }
-    };
+    return { niceId: siteResource.niceId, config: resourceConfig };
+}
+
+export async function generatePrivateResourceBlueprintYaml(
+    siteResourceId: number
+): Promise<{ niceId: string; contents: string }> {
+    const { niceId, config } =
+        await buildPrivateResourceBlueprintConfig(siteResourceId);
 
     return {
-        niceId: siteResource.niceId,
-        contents: stringifyYaml(config)
+        niceId,
+        contents: stringifyYaml({ "client-resources": { [niceId]: config } })
     };
 }
