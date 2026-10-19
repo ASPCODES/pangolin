@@ -534,23 +534,12 @@ async function updateHttpResource(
             );
         }
 
-        const isMtlsLicensed = await isLicensedOrSubscribed(
-            resource.orgId,
-            tierMatrix.mtls
-        );
-        if (!isMtlsLicensed) {
-            return next(
-                createHttpError(
-                    HttpCode.FORBIDDEN,
-                    "mTLS is not supported on your current plan. Please upgrade to access this feature."
-                )
-            );
-        }
-
         const [{ certificateCount }] = await db
             .select({ certificateCount: count() })
             .from(resourceMtlsCertificates)
-            .where(eq(resourceMtlsCertificates.resourceId, resource.resourceId));
+            .where(
+                eq(resourceMtlsCertificates.resourceId, resource.resourceId)
+            );
 
         if (certificateCount === 0) {
             return next(
@@ -572,8 +561,10 @@ async function updateHttpResource(
     }
 
     // catch when the resource policy changes or gets cleared
-    if (updateData.resourcePolicyId !== undefined &&
-        resource.resourcePolicyId !== updateData.resourcePolicyId) {
+    if (
+        updateData.resourcePolicyId !== undefined &&
+        resource.resourcePolicyId !== updateData.resourcePolicyId
+    ) {
         await clearResourceSpecificSettings(
             resource.resourceId,
             resource.orgId,

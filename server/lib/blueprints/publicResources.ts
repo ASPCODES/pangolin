@@ -279,20 +279,6 @@ export async function updatePublicResources(
             ? JSON.stringify(resourceData.responseHeaders)
             : null;
 
-        // mTLS is a security control: refuse (rather than silently drop) a
-        // blueprint that asks for it on a plan that doesn't include it.
-        if (resourceData.mtls?.enabled) {
-            const mtlsLicensed = await isLicensedOrSubscribed(
-                orgId,
-                tierMatrix.mtls
-            );
-            if (!mtlsLicensed) {
-                throw new Error(
-                    "mTLS is not supported on your current plan. Please upgrade to access this feature."
-                );
-            }
-        }
-
         if (resourceData.policy) {
             const isLicensed = await isLicensedOrSubscribed(
                 orgId,
@@ -1695,7 +1681,10 @@ async function syncResourceMtlsCertificates(
     trx: Transaction
 ) {
     // A PEM entry may itself be a bundle; flatten and dedupe by fingerprint.
-    const desired = new Map<string, ReturnType<typeof parseCaCertificates>[0]>();
+    const desired = new Map<
+        string,
+        ReturnType<typeof parseCaCertificates>[0]
+    >();
     for (const pem of caCertificates) {
         for (const cert of parseCaCertificates(pem)) {
             desired.set(cert.fingerprint, cert);
@@ -1960,13 +1949,9 @@ async function syncInlinePolicyRules(
                     .update(resourcePolicyRules)
                     .set({
                         action: getRuleAction(rule.action) as
-                            | "ACCEPT"
-                            | "DROP"
-                            | "PASS",
+                            "ACCEPT" | "DROP" | "PASS",
                         match: rule.match.toUpperCase() as
-                            | "CIDR"
-                            | "IP"
-                            | "PATH",
+                            "CIDR" | "IP" | "PATH",
                         value: getRuleValue(
                             rule.match.toUpperCase(),
                             rule.value
@@ -1980,9 +1965,7 @@ async function syncInlinePolicyRules(
             await trx.insert(resourcePolicyRules).values({
                 resourcePolicyId: policyId,
                 action: getRuleAction(rule.action) as
-                    | "ACCEPT"
-                    | "DROP"
-                    | "PASS",
+                    "ACCEPT" | "DROP" | "PASS",
                 match: rule.match.toUpperCase() as "CIDR" | "IP" | "PATH",
                 value: getRuleValue(rule.match.toUpperCase(), rule.value),
                 priority: intendedPriority

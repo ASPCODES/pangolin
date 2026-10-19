@@ -8,8 +8,6 @@ import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import { OpenAPITags, registry } from "@server/openApi";
-import { isLicensedOrSubscribed } from "#private/lib/isLicencedOrSubscribed";
-import { tierMatrix } from "@server/lib/billing/tierMatrix";
 import {
     MAX_MTLS_CERTIFICATES_PER_RESOURCE,
     parseCaCertificates
@@ -116,19 +114,6 @@ export async function createResourceMtlsCertificate(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
                     "mTLS is only supported on HTTP resources"
-                )
-            );
-        }
-
-        const isLicensed = await isLicensedOrSubscribed(
-            resource.orgId,
-            tierMatrix.mtls
-        );
-        if (!isLicensed) {
-            return next(
-                createHttpError(
-                    HttpCode.FORBIDDEN,
-                    "mTLS is not supported on your current plan. Please upgrade to access this feature."
                 )
             );
         }

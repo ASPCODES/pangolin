@@ -295,16 +295,8 @@ async function disableFeature(
                 await disableAISessionLogs(orgId);
                 break;
 
-            case TierFeature.RotateCredentials:
-                await disableRotateCredentials(orgId);
-                break;
-
             case TierFeature.MaintenancePage:
                 await disablemaintenancePage(orgId);
-                break;
-
-            case TierFeature.Mtls:
-                await disableMtls(orgId);
                 break;
 
             case TierFeature.DevicePosture:
