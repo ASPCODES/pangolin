@@ -24,13 +24,19 @@ RUN if [ "$BUILD" = "oss" ]; then rm -rf server/private; fi && \
     npm run build:cli && \
     test -f dist/server.mjs
 
-# Create placeholder files for MaxMind databases to avoid COPY errors
-# Real files should be present for saas builds, placeholders for oss builds
-RUN touch /app/GeoLite2-Country.mmdb /app/GeoLite2-ASN.mmdb
+# Instead of shipping the full production node_modules (most of which is UI-only
+# code already compiled into .next), copy only the files the server bundles can
+# load, merged with the node_modules Next.js traced for its standalone server.
+# Pruning first keeps dev dependencies out of the trace.
+RUN npm prune --omit=dev && \
+    node trace-deps.mjs -o .next/standalone dist/server.mjs dist/migrations.mjs dist/cli.mjs
 
-FROM base AS builder
-
-RUN npm ci --omit=dev
+# MaxMind databases are only shipped in saas builds
+RUN mkdir -p maxmind && \
+    if [ "$BUILD" = "saas" ]; then \
+        touch GeoLite2-Country.mmdb GeoLite2-ASN.mmdb && \
+        mv GeoLite2-Country.mmdb GeoLite2-ASN.mmdb maxmind/; \
+    fi
 
 # FROM node:24.18.1-slim AS runner
 FROM public.ecr.aws/docker/library/node:24.18.1-slim AS runner
@@ -38,9 +44,6 @@ FROM public.ecr.aws/docker/library/node:24.18.1-slim AS runner
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y curl tzdata && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
 
 COPY --from=builder-dev /app/.next/standalone ./
 COPY --from=builder-dev /app/.next/static ./.next/static

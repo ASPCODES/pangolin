@@ -217,6 +217,7 @@ export const handleOlmServerInitAddPeerHandshake: MessageHandler = async (
                 siteId: site.siteId,
                 exitNode: {
                     publicKey: exitNode.publicKey,
+                    relayPort: exitNode.relayPort,
                     endpoint: exitNode.endpoint
                 }
             },

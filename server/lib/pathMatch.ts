@@ -1,16 +1,37 @@
-const segmentRegexCache = new Map<string, RegExp>();
+// Matches a single segment against a glob where `*` matches any run of
+// characters and `?` matches exactly one. Greedy two-pointer matching that
+// only ever backtracks to the most recent `*`, so it runs in
+// O(pattern * text) worst case. Compiling to a `.*` regex instead
+// backtracks catastrophically on patterns like `*a*a*a*a*b`.
+function matchSegmentGlob(pattern: string, text: string): boolean {
+    let p = 0;
+    let t = 0;
+    let starP = -1;
+    let starT = 0;
 
-function getSegmentRegex(patternPart: string): RegExp {
-    let regex = segmentRegexCache.get(patternPart);
-    if (!regex) {
-        const regexPattern = patternPart
-            .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-            .replace(/\*/g, ".*")
-            .replace(/\?/g, ".");
-        regex = new RegExp(`^${regexPattern}$`);
-        segmentRegexCache.set(patternPart, regex);
+    while (t < text.length) {
+        if (p < pattern.length && pattern[p] === "*") {
+            starP = p++;
+            starT = t;
+        } else if (
+            p < pattern.length &&
+            (pattern[p] === "?" || pattern[p] === text[t])
+        ) {
+            p++;
+            t++;
+        } else if (starP !== -1) {
+            // let the last `*` swallow one more character and retry
+            p = starP + 1;
+            t = ++starT;
+        } else {
+            return false;
+        }
     }
-    return regex;
+
+    while (p < pattern.length && pattern[p] === "*") {
+        p++;
+    }
+    return p === pattern.length;
 }
 
 // Decodes percent-encoding (so an encoded slash like `%2F` is treated as a
@@ -79,8 +100,9 @@ export function isPathAllowed(pattern: string, path: string): boolean {
                 // match zero segments, or consume one path segment
                 dp[i][j] = dp[i + 1][j] || dp[i][j + 1];
             } else if (currentPatternPart.includes("*")) {
-                const regex = getSegmentRegex(currentPatternPart);
-                dp[i][j] = regex.test(pathParts[j]) && dp[i + 1][j + 1];
+                dp[i][j] =
+                    dp[i + 1][j + 1] &&
+                    matchSegmentGlob(currentPatternPart, pathParts[j]);
             } else {
                 dp[i][j] =
                     currentPatternPart === pathParts[j] && dp[i + 1][j + 1];
