@@ -31,12 +31,9 @@ RUN if [ "$BUILD" = "oss" ]; then rm -rf server/private; fi && \
 RUN npm prune --omit=dev && \
     node trace-deps.mjs -o .next/standalone dist/server.mjs dist/migrations.mjs dist/cli.mjs
 
-# MaxMind databases are only shipped in saas builds
-RUN mkdir -p maxmind && \
-    if [ "$BUILD" = "saas" ]; then \
-        touch GeoLite2-Country.mmdb GeoLite2-ASN.mmdb && \
-        mv GeoLite2-Country.mmdb GeoLite2-ASN.mmdb maxmind/; \
-    fi
+# Create placeholder files for MaxMind databases to avoid COPY errors
+# Real files should be present for saas builds, placeholders for oss builds
+RUN touch /app/GeoLite2-Country.mmdb /app/GeoLite2-ASN.mmdb
 
 # FROM node:24.18.1-slim AS runner
 FROM public.ecr.aws/docker/library/node:24.18.1-slim AS runner
