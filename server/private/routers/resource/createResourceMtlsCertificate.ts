@@ -8,7 +8,7 @@ import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import { OpenAPITags, registry } from "@server/openApi";
-import { isLicensedOrSubscribed } from "#dynamic/lib/isLicencedOrSubscribed";
+import { isLicensedOrSubscribed } from "#private/lib/isLicencedOrSubscribed";
 import { tierMatrix } from "@server/lib/billing/tierMatrix";
 import {
     MAX_MTLS_CERTIFICATES_PER_RESOURCE,
