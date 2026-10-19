@@ -18,6 +18,7 @@ import * as aiBudget from "./aiBudget";
 import * as virtualApiKey from "./virtualApiKey";
 import * as redirect from "./redirect";
 import * as labels from "./labels";
+import * as reKey from "./re-key";
 import {
     verifyApiKey,
     verifyApiKeyOrgAccess,
@@ -147,6 +148,24 @@ authenticated.post(
     verifyApiKeyHasAction(ActionsEnum.updateSite),
     logActionAudit(ActionsEnum.updateSite),
     site.updateSite
+);
+
+authenticated.post(
+    "/re-key/:siteId/regenerate-site-secret",
+    verifyApiKeySiteAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.reGenerateSecret),
+    logActionAudit(ActionsEnum.reGenerateSecret),
+    reKey.reGenerateSiteSecret
+);
+
+authenticated.put(
+    "/re-key/:orgId/regenerate-remote-exit-node-secret",
+    verifyApiKeyOrgAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.reGenerateSecret),
+    logActionAudit(ActionsEnum.reGenerateSecret),
+    reKey.reGenerateExitNodeSecret
 );
 
 authenticated.post(
@@ -1495,6 +1514,15 @@ authenticated.post(
     verifyApiKeyHasAction(ActionsEnum.updateClient),
     logActionAudit(ActionsEnum.updateClient),
     client.updateClient
+);
+
+authenticated.post(
+    "/re-key/:clientId/regenerate-client-secret",
+    verifyApiKeyClientAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.reGenerateSecret),
+    logActionAudit(ActionsEnum.reGenerateSecret),
+    reKey.reGenerateClientSecret
 );
 
 authenticated.put(

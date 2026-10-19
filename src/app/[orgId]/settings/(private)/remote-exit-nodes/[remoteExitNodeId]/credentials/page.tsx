@@ -32,9 +32,6 @@ import {
 import CopyToClipboard from "@app/components/CopyToClipboard";
 import { Alert, AlertDescription, AlertTitle } from "@app/components/ui/alert";
 import { InfoIcon } from "lucide-react";
-import { PaidFeaturesAlert } from "@app/components/PaidFeaturesAlert";
-import { usePaidStatus } from "@app/hooks/usePaidStatus";
-import { tierMatrix } from "@server/lib/billing/tierMatrix";
 
 export default function CredentialsPage() {
     const { env } = useEnvContext();
@@ -43,8 +40,6 @@ export default function CredentialsPage() {
     const router = useRouter();
     const t = useTranslations();
     const { remoteExitNode } = useRemoteExitNodeContext();
-
-    const { isPaidUser } = usePaidStatus();
 
     const [modalOpen, setModalOpen] = useState(false);
     const [credentials, setCredentials] =
@@ -129,10 +124,6 @@ export default function CredentialsPage() {
                         </SettingsSectionDescription>
                     </SettingsSectionHeader>
                     <SettingsSectionBody>
-                        <PaidFeaturesAlert
-                            tiers={tierMatrix.rotateCredentials}
-                        />
-
                         <InfoSections cols={3}>
                             <InfoSection>
                                 <InfoSectionTitle>
@@ -196,9 +187,6 @@ export default function CredentialsPage() {
                                     setShouldDisconnect(false);
                                     setModalOpen(true);
                                 }}
-                                disabled={
-                                    !isPaidUser(tierMatrix.rotateCredentials)
-                                }
                             >
                                 {t("regenerateCredentialsButton")}
                             </Button>
@@ -207,9 +195,6 @@ export default function CredentialsPage() {
                                     setShouldDisconnect(true);
                                     setModalOpen(true);
                                 }}
-                                disabled={
-                                    !isPaidUser(tierMatrix.rotateCredentials)
-                                }
                             >
                                 {t("remoteExitNodeRegenerateAndDisconnect")}
                             </Button>

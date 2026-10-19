@@ -1504,6 +1504,7 @@
     "actionDeleteSite": "Delete Site",
     "actionGetSite": "Get Site",
     "actionListSites": "List Sites",
+    "actionReGenerateSecret": "Regenerate Credentials",
     "actionCreateAiProvider": "Create AI Provider",
     "actionDeleteAiProvider": "Delete AI Provider",
     "actionGetAiProvider": "Get AI Provider",

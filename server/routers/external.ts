@@ -22,6 +22,7 @@ import * as newt from "./newt";
 import * as olm from "./olm";
 import * as ssh from "./ssh";
 import * as serverInfo from "./serverInfo";
+import * as reKey from "./re-key";
 import HttpCode from "@server/types/HttpCode";
 import {
     verifyAccessTokenAccess,
@@ -1970,6 +1971,30 @@ authenticated.post(
     verifyUserHasAction(ActionsEnum.restartCertificate),
     logActionAudit(ActionsEnum.restartCertificate),
     certificates.restartCertificate
+);
+
+authenticated.post(
+    "/re-key/:clientId/regenerate-client-secret",
+    verifyClientAccess, // this is first to set the org id
+    verifyLimits,
+    verifyUserHasAction(ActionsEnum.reGenerateSecret),
+    reKey.reGenerateClientSecret
+);
+
+authenticated.post(
+    "/re-key/:siteId/regenerate-site-secret",
+    verifySiteAccess, // this is first to set the org id
+    verifyLimits,
+    verifyUserHasAction(ActionsEnum.reGenerateSecret),
+    reKey.reGenerateSiteSecret
+);
+
+authenticated.put(
+    "/re-key/:orgId/regenerate-remote-exit-node-secret",
+    verifyOrgAccess,
+    verifyLimits,
+    verifyUserHasAction(ActionsEnum.reGenerateSecret),
+    reKey.reGenerateExitNodeSecret
 );
 
 // Auth routes

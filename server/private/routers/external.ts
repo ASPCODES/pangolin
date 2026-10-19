@@ -26,7 +26,6 @@ import {
     exportAiSessionLogs
 } from "@server/routers/auditLogs";
 import * as misc from "#private/routers/misc";
-import * as reKey from "#private/routers/re-key";
 import * as approval from "#private/routers/approvals";
 import * as user from "#private/routers/user";
 import * as client from "#private/routers/client";
@@ -615,36 +614,6 @@ authenticated.get(
     verifyUserHasAction(ActionsEnum.exportLogs),
     logActionAudit(ActionsEnum.exportLogs),
     exportAiSessionLogs
-);
-
-authenticated.post(
-    "/re-key/:clientId/regenerate-client-secret",
-    verifyClientAccess, // this is first to set the org id
-    verifyValidLicense,
-    verifyValidSubscription(tierMatrix.rotateCredentials),
-    verifyLimits,
-    verifyUserHasAction(ActionsEnum.reGenerateSecret),
-    reKey.reGenerateClientSecret
-);
-
-authenticated.post(
-    "/re-key/:siteId/regenerate-site-secret",
-    verifySiteAccess, // this is first to set the org id
-    verifyValidLicense,
-    verifyValidSubscription(tierMatrix.rotateCredentials),
-    verifyLimits,
-    verifyUserHasAction(ActionsEnum.reGenerateSecret),
-    reKey.reGenerateSiteSecret
-);
-
-authenticated.put(
-    "/re-key/:orgId/regenerate-remote-exit-node-secret",
-    verifyValidLicense,
-    verifyValidSubscription(tierMatrix.rotateCredentials),
-    verifyOrgAccess,
-    verifyLimits,
-    verifyUserHasAction(ActionsEnum.reGenerateSecret),
-    reKey.reGenerateExitNodeSecret
 );
 
 authenticated.post(
