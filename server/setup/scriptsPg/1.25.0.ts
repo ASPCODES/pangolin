@@ -53,7 +53,7 @@ export default async function migration() {
             );
         `);
         await db.execute(
-            sql`ALTER TABLE "exitNodes" ADD COLUMN "relayPort" integer NOT NULL;`
+            sql`ALTER TABLE "exitNodes" ADD COLUMN "relayPort" integer DEFAULT 21820 NOT NULL;`
         );
         await db.execute(
             sql`ALTER TABLE "resources" ADD COLUMN "loadBalancingStrategy" varchar(32) DEFAULT 'wrr' NOT NULL;`

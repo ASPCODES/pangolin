@@ -500,7 +500,7 @@ export const exitNodes = pgTable("exitNodes", {
     endpoint: varchar("endpoint").notNull(),
     publicKey: varchar("publicKey").notNull(),
     listenPort: integer("listenPort").notNull(),
-    relayPort: integer("relayPort").notNull(),
+    relayPort: integer("relayPort").notNull().default(21820),
     reachableAt: varchar("reachableAt"),
     maxConnections: integer("maxConnections"),
     online: boolean("online").notNull().default(false),

@@ -81,7 +81,7 @@ export default async function migration() {
             ).run();
             db.prepare(
                 `
-                ALTER TABLE 'exitNodes' ADD 'relayPort' integer NOT NULL;
+                ALTER TABLE 'exitNodes' ADD 'relayPort' integer DEFAULT 21820 NOT NULL;
                 `
             ).run();
             db.prepare(
