@@ -3956,6 +3956,7 @@
     "mtlsCertificateErrorRemoveDescription": "The certificate could not be removed.",
     "mtlsLastCertificateRemoved": "mTLS was turned off because the last CA certificate was removed.",
     "mtlsNoCertificates": "No CA certificates added yet",
+    "mtlsSummary": "{count} trusted CA certificates",
     "mtlsRemoveCertificate": "Remove CA certificate",
     "mtlsExpired": "Expired",
     "mtlsExpiresSoon": "Expires soon",
