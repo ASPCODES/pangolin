@@ -16,14 +16,11 @@ import {
 import { SwitchInput } from "@app/components/SwitchInput";
 import { Alert, AlertDescription, AlertTitle } from "@app/components/ui/alert";
 import { Badge } from "@app/components/ui/badge";
-import { PaidFeaturesAlert } from "@app/components/PaidFeaturesAlert";
 import { useEnvContext } from "@app/hooks/useEnvContext";
-import { usePaidStatus } from "@app/hooks/usePaidStatus";
 import { useResourceContext } from "@app/hooks/useResourceContext";
 import { toast } from "@app/hooks/useToast";
 import { createApiClient, formatAxiosError } from "@app/lib/api";
 import { resourceQueries } from "@app/lib/queries";
-import { tierMatrix } from "@server/lib/billing/tierMatrix";
 import type {
     CreateResourceMtlsCertificateResponse,
     DeleteResourceMtlsCertificateResponse,
@@ -47,10 +44,9 @@ export default function ResourceMtlsPage() {
     const t = useTranslations();
     const api = createApiClient({ env });
     const queryClient = useQueryClient();
-    const { isPaidUser } = usePaidStatus();
 
     const supportsMtls = resource.mode === "http";
-    const isMtlsDisabled = !isPaidUser(tierMatrix.mtls);
+    const isMtlsDisabled = false;
 
     useEffect(() => {
         if (env.flags.disableEnterpriseFeatures || !supportsMtls) {
@@ -206,7 +202,6 @@ export default function ResourceMtlsPage() {
 
     return (
         <>
-            <PaidFeaturesAlert tiers={tierMatrix.mtls} />
             <div
                 className={
                     isMtlsDisabled

@@ -1963,3 +1963,36 @@ authenticated.put(
     logActionAudit(ActionsEnum.detachLabelFromItem),
     labels.detachLabelFromItem
 );
+
+authenticated.put(
+    [
+        "/resource/:resourceId/mtls/certificate",
+        "/public-resource/:resourceId/mtls/certificate"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.createResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.createResourceMtlsCertificate),
+    resource.createResourceMtlsCertificate
+);
+
+authenticated.get(
+    [
+        "/resource/:resourceId/mtls/certificates",
+        "/public-resource/:resourceId/mtls/certificates"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyApiKeyHasAction(ActionsEnum.listResourceMtlsCertificates),
+    resource.listResourceMtlsCertificates
+);
+
+authenticated.delete(
+    [
+        "/resource/:resourceId/mtls/certificate/:mtlsCertificateId",
+        "/public-resource/:resourceId/mtls/certificate/:mtlsCertificateId"
+    ],
+    verifyApiKeyResourceAccess,
+    verifyApiKeyHasAction(ActionsEnum.deleteResourceMtlsCertificate),
+    logActionAudit(ActionsEnum.deleteResourceMtlsCertificate),
+    resource.deleteResourceMtlsCertificate
+);
