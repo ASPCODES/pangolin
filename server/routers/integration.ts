@@ -1031,6 +1031,39 @@ authenticated.put(
     policy.setResourcePolicyRules
 );
 
+authenticated.put(
+    [
+        "/resource-policy/:resourcePolicyId/mtls/certificate",
+        "/public-resource-policy/:resourcePolicyId/mtls/certificate"
+    ],
+    verifyApiKeyResourcePolicyAccess,
+    verifyLimits,
+    verifyApiKeyHasAction(ActionsEnum.updateResourcePolicy),
+    logActionAudit(ActionsEnum.updateResourcePolicy),
+    policy.createResourcePolicyMtlsCertificate
+);
+
+authenticated.get(
+    [
+        "/resource-policy/:resourcePolicyId/mtls/certificates",
+        "/public-resource-policy/:resourcePolicyId/mtls/certificates"
+    ],
+    verifyApiKeyResourcePolicyAccess,
+    verifyApiKeyHasAction(ActionsEnum.getResourcePolicy),
+    policy.listResourcePolicyMtlsCertificates
+);
+
+authenticated.delete(
+    [
+        "/resource-policy/:resourcePolicyId/mtls/certificate/:mtlsCertificateId",
+        "/public-resource-policy/:resourcePolicyId/mtls/certificate/:mtlsCertificateId"
+    ],
+    verifyApiKeyResourcePolicyAccess,
+    verifyApiKeyHasAction(ActionsEnum.updateResourcePolicy),
+    logActionAudit(ActionsEnum.updateResourcePolicy),
+    policy.deleteResourcePolicyMtlsCertificate
+);
+
 authenticated.post(
     [
         "/resource/:resourceId/roles/add",

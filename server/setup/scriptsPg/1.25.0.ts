@@ -31,6 +31,21 @@ export default async function migration() {
             );
         `);
         await db.execute(sql`
+            CREATE TABLE "resourcePolicyMtlsCertificates" (
+                "mtlsCertificateId" serial PRIMARY KEY NOT NULL,
+                "resourcePolicyId" integer NOT NULL,
+                "name" varchar,
+                "certificate" text NOT NULL,
+                "subject" varchar,
+                "issuer" varchar,
+                "serialNumber" varchar,
+                "fingerprint" varchar,
+                "notBefore" bigint,
+                "notAfter" bigint,
+                "createdAt" bigint NOT NULL
+            );
+        `);
+        await db.execute(sql`
             CREATE TABLE "clientOrgRoles" (
                 "clientId" integer NOT NULL,
                 "orgId" varchar NOT NULL,
@@ -66,6 +81,15 @@ export default async function migration() {
         );
         await db.execute(
             sql`ALTER TABLE "resources" ADD COLUMN "mtlsEnabled" boolean DEFAULT false NOT NULL;`
+        );
+        await db.execute(
+            sql`ALTER TABLE "resources" ADD COLUMN "forwardIdentityHeaders" boolean DEFAULT true NOT NULL;`
+        );
+        await db.execute(
+            sql`ALTER TABLE "resourcePolicies" ADD COLUMN "mtlsEnabled" boolean DEFAULT false NOT NULL;`
+        );
+        await db.execute(
+            sql`ALTER TABLE "resourcePolicyMtlsCertificates" ADD CONSTRAINT "resourcePolicyMtlsCertificates_resourcePolicyId_resourcePolicies_resourcePolicyId_fk" FOREIGN KEY ("resourcePolicyId") REFERENCES "public"."resourcePolicies"("resourcePolicyId") ON DELETE cascade ON UPDATE no action;`
         );
         await db.execute(
             sql`ALTER TABLE "resourceMtlsCertificates" ADD CONSTRAINT "resourceMtlsCertificates_resourceId_resources_resourceId_fk" FOREIGN KEY ("resourceId") REFERENCES "public"."resources"("resourceId") ON DELETE cascade ON UPDATE no action;`

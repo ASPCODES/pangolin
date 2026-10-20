@@ -31,6 +31,7 @@ import {
     users
 } from "@server/db";
 import { queryResourcePolicy } from "@server/routers/policy/getResourcePolicy";
+import { getMtlsCertificatePems, type MtlsOwner } from "@server/lib/mtls";
 import {
     listPublicResourceAiProviders,
     listSiteResourceAiProviders
@@ -106,12 +107,24 @@ function buildHealthcheck(row: {
     });
 }
 
+async function buildMtlsConfig(owner: MtlsOwner, enabled: boolean) {
+    const caCertificates = await getMtlsCertificatePems(owner);
+    if (!enabled && caCertificates.length === 0) {
+        return undefined;
+    }
+    return stripUndefined({
+        enabled,
+        "ca-certificates": caCertificates.length ? caCertificates : undefined
+    });
+}
+
 async function buildPublicAuthAndRules(resource: {
     resourceId: number;
     resourcePolicyId: number | null;
     defaultResourcePolicyId: number | null;
     sso: boolean | null;
     skipToIdpId: number | null;
+    mtlsEnabled: boolean;
 }): Promise<{
     policy: string | undefined;
     auth: Record<string, any> | undefined;
@@ -204,7 +217,11 @@ async function buildPublicAuthAndRules(resource: {
             "whitelist-users": whitelistRows.length
                 ? whitelistRows.map((w) => w.email)
                 : undefined,
-            "auto-login-idp": resource.skipToIdpId ?? undefined
+            "auto-login-idp": resource.skipToIdpId ?? undefined,
+            mtls: await buildMtlsConfig(
+                { type: "resource", resourceId: resource.resourceId },
+                resource.mtlsEnabled
+            )
         });
 
         return {
@@ -264,7 +281,11 @@ async function buildPublicAuthAndRules(resource: {
         "whitelist-users": policy.emailWhiteList.length
             ? policy.emailWhiteList.map((w) => w.email)
             : undefined,
-        "auto-login-idp": policy.idpId ?? undefined
+        "auto-login-idp": policy.idpId ?? undefined,
+        mtls: await buildMtlsConfig(
+            { type: "policy", resourcePolicyId: policy.resourcePolicyId },
+            policy.mtlsEnabled
+        )
     });
 
     return {

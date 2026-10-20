@@ -1078,6 +1078,28 @@ authenticated.put(
     policy.setResourcePolicyRules
 );
 
+authenticated.put(
+    "/resource-policy/:resourcePolicyId/mtls/certificate",
+    verifyResourcePolicyAccess,
+    verifyLimits,
+    verifyUserHasAction(ActionsEnum.updateResourcePolicy),
+    logActionAudit(ActionsEnum.updateResourcePolicy),
+    policy.createResourcePolicyMtlsCertificate
+);
+authenticated.get(
+    "/resource-policy/:resourcePolicyId/mtls/certificates",
+    verifyResourcePolicyAccess,
+    verifyUserHasAction(ActionsEnum.getResourcePolicy),
+    policy.listResourcePolicyMtlsCertificates
+);
+authenticated.delete(
+    "/resource-policy/:resourcePolicyId/mtls/certificate/:mtlsCertificateId",
+    verifyResourcePolicyAccess,
+    verifyUserHasAction(ActionsEnum.updateResourcePolicy),
+    logActionAudit(ActionsEnum.updateResourcePolicy),
+    policy.deleteResourcePolicyMtlsCertificate
+);
+
 authenticated.post(
     `/resource/:resourceId/password`,
     verifyResourceAccess,

@@ -38,6 +38,24 @@ export default async function migration() {
             ).run();
             db.prepare(
                 `
+                CREATE TABLE 'resourcePolicyMtlsCertificates' (
+                    'mtlsCertificateId' integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    'resourcePolicyId' integer NOT NULL,
+                    'name' text,
+                    'certificate' text NOT NULL,
+                    'subject' text,
+                    'issuer' text,
+                    'serialNumber' text,
+                    'fingerprint' text,
+                    'notBefore' integer,
+                    'notAfter' integer,
+                    'createdAt' integer NOT NULL,
+                    FOREIGN KEY ('resourcePolicyId') REFERENCES 'resourcePolicies'('resourcePolicyId') ON UPDATE no action ON DELETE cascade
+                );
+                `
+            ).run();
+            db.prepare(
+                `
                 CREATE TABLE 'clientOrgRoles' (
                     'clientId' integer NOT NULL,
                     'orgId' text NOT NULL,
@@ -96,6 +114,16 @@ export default async function migration() {
             db.prepare(
                 `
                 ALTER TABLE 'resources' ADD 'mtlsEnabled' integer DEFAULT false NOT NULL;
+                `
+            ).run();
+            db.prepare(
+                `
+                ALTER TABLE 'resources' ADD 'forwardIdentityHeaders' integer DEFAULT true NOT NULL;
+                `
+            ).run();
+            db.prepare(
+                `
+                ALTER TABLE 'resourcePolicies' ADD 'mtlsEnabled' integer DEFAULT false NOT NULL;
                 `
             ).run();
         })();

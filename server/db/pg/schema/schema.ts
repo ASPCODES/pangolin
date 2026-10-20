@@ -3,7 +3,6 @@ import { InferSelectModel, sql } from "drizzle-orm";
 import {
     bigint,
     boolean,
-    check,
     index,
     integer,
     pgTable,
@@ -205,6 +204,9 @@ export const resources = pgTable(
         maintenanceMessage: text("maintenanceMessage"),
         maintenanceEstimatedTime: text("maintenanceEstimatedTime"),
         mtlsEnabled: boolean("mtlsEnabled").notNull().default(false),
+        forwardIdentityHeaders: boolean("forwardIdentityHeaders")
+            .notNull()
+            .default(true),
         postAuthPath: text("postAuthPath"),
         health: varchar("health").default("unknown"), // "healthy", "unhealthy", "unknown"
         wildcard: boolean("wildcard").notNull().default(false),
@@ -1245,6 +1247,7 @@ export const resourcePolicies = pgTable(
         emailWhitelistEnabled: boolean("emailWhitelistEnabled")
             .notNull()
             .default(false),
+        mtlsEnabled: boolean("mtlsEnabled").notNull().default(false),
         idpId: integer("idpId").references(() => idp.idpId, {
             onDelete: "set null"
         }),
@@ -2045,6 +2048,43 @@ export const certificates = pgTable("certificates", {
     keyFile: text("keyFile")
 });
 
+export const resourceMtlsCertificates = pgTable("resourceMtlsCertificates", {
+    mtlsCertificateId: serial("mtlsCertificateId").primaryKey(),
+    resourceId: integer("resourceId")
+        .notNull()
+        .references(() => resources.resourceId, { onDelete: "cascade" }),
+    name: varchar("name"),
+    certificate: text("certificate").notNull(),
+    subject: varchar("subject"),
+    issuer: varchar("issuer"),
+    serialNumber: varchar("serialNumber"),
+    fingerprint: varchar("fingerprint"),
+    notBefore: bigint("notBefore", { mode: "number" }),
+    notAfter: bigint("notAfter", { mode: "number" }),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull()
+});
+
+export const resourcePolicyMtlsCertificates = pgTable(
+    "resourcePolicyMtlsCertificates",
+    {
+        mtlsCertificateId: serial("mtlsCertificateId").primaryKey(),
+        resourcePolicyId: integer("resourcePolicyId")
+            .notNull()
+            .references(() => resourcePolicies.resourcePolicyId, {
+                onDelete: "cascade"
+            }),
+        name: varchar("name"),
+        certificate: text("certificate").notNull(),
+        subject: varchar("subject"),
+        issuer: varchar("issuer"),
+        serialNumber: varchar("serialNumber"),
+        fingerprint: varchar("fingerprint"),
+        notBefore: bigint("notBefore", { mode: "number" }),
+        notAfter: bigint("notAfter", { mode: "number" }),
+        createdAt: bigint("createdAt", { mode: "number" }).notNull()
+    }
+);
+
 export type Org = InferSelectModel<typeof orgs>;
 export type User = InferSelectModel<typeof users>;
 export type Site = InferSelectModel<typeof sites>;
@@ -2147,3 +2187,9 @@ export type SiteResourceAiProvider = InferSelectModel<
 export type ResourceAiModel = InferSelectModel<typeof resourceAiModels>;
 export type SiteResourceAiModel = InferSelectModel<typeof siteResourceAiModels>;
 export type Certificate = InferSelectModel<typeof certificates>;
+export type ResourceMtlsCertificate = InferSelectModel<
+    typeof resourceMtlsCertificates
+>;
+export type ResourcePolicyMtlsCertificate = InferSelectModel<
+    typeof resourcePolicyMtlsCertificates
+>;

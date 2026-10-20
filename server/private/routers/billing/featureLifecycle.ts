@@ -24,6 +24,7 @@ import {
     loginPageBrandingOrg,
     loginPageOrg,
     orgs,
+    resourcePolicies,
     resources,
     roles,
     siteResources,
@@ -524,7 +525,16 @@ async function disableMtls(orgId: string): Promise<void> {
         })
         .where(eq(resources.orgId, orgId));
 
-    logger.info(`Disabled mTLS on all resources for org ${orgId}`);
+    await db
+        .update(resourcePolicies)
+        .set({
+            mtlsEnabled: false
+        })
+        .where(eq(resourcePolicies.orgId, orgId));
+
+    logger.info(
+        `Disabled mTLS on all resources and resource policies for org ${orgId}`
+    );
 }
 
 async function disableDevicePosture(orgId: string): Promise<void> {}

@@ -829,6 +829,8 @@
     "save": "Save",
     "proxyAdditional": "Additional Proxy Settings",
     "proxyAdditionalDescription": "Configure how the resource handles proxy settings",
+    "proxyForwardIdentityHeaders": "Forward Identity Headers",
+    "proxyForwardIdentityHeadersDescription": "Send the authenticated user's identity to the backend in the Remote-User, Remote-Email, Remote-Name, Remote-Role, and Remote-User-Id headers. Disable for backends that reject requests with unrecognized headers.",
     "proxyCustomHeader": "Custom Host Header",
     "proxyCustomHeaderDescription": "The host header to set when proxying requests. Leave empty to use the default.",
     "proxyAdditionalSubmit": "Save Proxy Settings",

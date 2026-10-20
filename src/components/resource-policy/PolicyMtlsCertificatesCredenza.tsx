@@ -16,15 +16,14 @@ import { Input } from "@app/components/ui/input";
 import { Label } from "@app/components/ui/label";
 import { Textarea } from "@app/components/ui/textarea";
 import { useEnvContext } from "@app/hooks/useEnvContext";
-import { useResourceContext } from "@app/hooks/useResourceContext";
 import { toast } from "@app/hooks/useToast";
 import { createApiClient, formatAxiosError } from "@app/lib/api";
-import { resourceQueries } from "@app/lib/queries";
+import { orgQueries } from "@app/lib/queries";
 import type {
-    CreateResourceMtlsCertificateResponse,
-    DeleteResourceMtlsCertificateResponse,
-    ListResourceMtlsCertificatesResponse
-} from "@server/routers/resource";
+    CreateResourcePolicyMtlsCertificateResponse,
+    DeleteResourcePolicyMtlsCertificateResponse,
+    ListResourcePolicyMtlsCertificatesResponse
+} from "@server/routers/policy";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AxiosResponse } from "axios";
 import { FileKey2, Trash2 } from "lucide-react";
@@ -34,22 +33,26 @@ import { useRef, useState } from "react";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EXPIRES_SOON_MS = 30 * DAY_MS;
 
-type ResourceMtlsCertificatesCredenzaProps = {
+type PolicyMtlsCertificatesCredenzaProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    certificates: ListResourceMtlsCertificatesResponse["certificates"];
+    resourcePolicyId: number;
+    certificates: ListResourcePolicyMtlsCertificatesResponse["certificates"];
     isLoading: boolean;
+    // called when removing the last CA certificate switched mTLS off
+    onMtlsDisabled: () => void;
 };
 
-export function ResourceMtlsCertificatesCredenza({
+export function PolicyMtlsCertificatesCredenza({
     open,
     onOpenChange,
+    resourcePolicyId,
     certificates,
-    isLoading
-}: ResourceMtlsCertificatesCredenzaProps) {
+    isLoading,
+    onMtlsDisabled
+}: PolicyMtlsCertificatesCredenzaProps) {
     const t = useTranslations();
     const { env } = useEnvContext();
-    const { resource, updateResource } = useResourceContext();
     const api = createApiClient({ env });
     const queryClient = useQueryClient();
 
@@ -61,9 +64,7 @@ export function ResourceMtlsCertificatesCredenza({
 
     async function invalidateCertificates() {
         await queryClient.invalidateQueries(
-            resourceQueries.resourceMtlsCertificates({
-                resourceId: resource.resourceId
-            })
+            orgQueries.resourcePolicyMtlsCertificates({ resourcePolicyId })
         );
     }
 
@@ -82,13 +83,12 @@ export function ResourceMtlsCertificatesCredenza({
         if (!pem.trim()) return;
         setAdding(true);
         try {
-            await api.put<AxiosResponse<CreateResourceMtlsCertificateResponse>>(
-                `/resource/${resource.resourceId}/mtls/certificate`,
-                {
-                    certificate: pem,
-                    ...(name.trim() ? { name: name.trim() } : {})
-                }
-            );
+            await api.put<
+                AxiosResponse<CreateResourcePolicyMtlsCertificateResponse>
+            >(`/resource-policy/${resourcePolicyId}/mtls/certificate`, {
+                certificate: pem,
+                ...(name.trim() ? { name: name.trim() } : {})
+            });
             setPem("");
             setName("");
             await invalidateCertificates();
@@ -114,14 +114,14 @@ export function ResourceMtlsCertificatesCredenza({
         setRemovingId(mtlsCertificateId);
         try {
             const res = await api.delete<
-                AxiosResponse<DeleteResourceMtlsCertificateResponse>
+                AxiosResponse<DeleteResourcePolicyMtlsCertificateResponse>
             >(
-                `/resource/${resource.resourceId}/mtls/certificate/${mtlsCertificateId}`
+                `/resource-policy/${resourcePolicyId}/mtls/certificate/${mtlsCertificateId}`
             );
             await invalidateCertificates();
 
             if (res.data.data.mtlsDisabled) {
-                updateResource({ mtlsEnabled: false });
+                onMtlsDisabled();
                 toast({
                     title: t("mtlsCertificateRemoved"),
                     description: t("mtlsLastCertificateRemoved")

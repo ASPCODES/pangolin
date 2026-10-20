@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { db, resourceMtlsCertificates, resources } from "@server/db";
+import { db, resources } from "@server/db";
 import { eq } from "drizzle-orm";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -8,10 +8,7 @@ import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import { OpenAPITags, registry } from "@server/openApi";
-import {
-    MAX_MTLS_CERTIFICATES_PER_RESOURCE,
-    parseCaCertificates
-} from "@server/lib/mtlsCertificate";
+import { addMtlsCertificates, getResourceMtlsOwner } from "@server/lib/mtls";
 import { CreateResourceMtlsCertificateResponse } from "@server/routers/resource/types";
 
 const createResourceMtlsCertificateParamsSchema = z.strictObject({
@@ -24,7 +21,7 @@ const createResourceMtlsCertificateBodySchema = z.strictObject({
 });
 
 const description =
-    "Add a trusted CA certificate that clients must present a certificate signed by when mTLS is enabled on a resource. Accepts a PEM bundle; each certificate in the bundle is stored separately.";
+    "Add a trusted CA certificate that clients must present a certificate signed by when mTLS is enabled on a resource. Accepts a PEM bundle; each certificate in the bundle is stored separately. When no shared resource policy is assigned, this updates the resource's inline policy.";
 
 registry.registerPath({
     method: "put",
@@ -118,92 +115,25 @@ export async function createResourceMtlsCertificate(
             );
         }
 
-        let parsedCerts;
-        try {
-            parsedCerts = parseCaCertificates(certificate);
-        } catch (e) {
-            return next(
-                createHttpError(
-                    HttpCode.BAD_REQUEST,
-                    e instanceof Error ? e.message : "Invalid certificate"
-                )
-            );
-        }
-
-        const existing = await db
-            .select({ fingerprint: resourceMtlsCertificates.fingerprint })
-            .from(resourceMtlsCertificates)
-            .where(eq(resourceMtlsCertificates.resourceId, resourceId));
-
-        const existingFingerprints = new Set(
-            existing.map((c) => c.fingerprint)
+        const inserted = await addMtlsCertificates(
+            getResourceMtlsOwner(resource),
+            certificate,
+            name
         );
-        const newCerts = parsedCerts.filter(
-            (c) => !existingFingerprints.has(c.fingerprint)
-        );
-
-        if (newCerts.length === 0) {
-            return next(
-                createHttpError(
-                    HttpCode.CONFLICT,
-                    parsedCerts.length === 1
-                        ? "This CA certificate has already been added to this resource"
-                        : "All certificates in this bundle have already been added to this resource"
-                )
-            );
-        }
-
-        if (
-            existing.length + newCerts.length >
-            MAX_MTLS_CERTIFICATES_PER_RESOURCE
-        ) {
-            return next(
-                createHttpError(
-                    HttpCode.BAD_REQUEST,
-                    `A resource can have at most ${MAX_MTLS_CERTIFICATES_PER_RESOURCE} trusted CA certificates`
-                )
-            );
-        }
-
-        const now = Date.now();
-        const inserted = await db
-            .insert(resourceMtlsCertificates)
-            .values(
-                newCerts.map((c) => ({
-                    resourceId,
-                    // a label only makes sense for a single certificate
-                    name: newCerts.length === 1 ? (name ?? null) : null,
-                    certificate: c.certificate,
-                    subject: c.subject,
-                    issuer: c.issuer,
-                    serialNumber: c.serialNumber,
-                    fingerprint: c.fingerprint,
-                    notBefore: c.notBefore,
-                    notAfter: c.notAfter,
-                    createdAt: now
-                }))
-            )
-            .returning({
-                mtlsCertificateId: resourceMtlsCertificates.mtlsCertificateId,
-                resourceId: resourceMtlsCertificates.resourceId,
-                name: resourceMtlsCertificates.name,
-                subject: resourceMtlsCertificates.subject,
-                issuer: resourceMtlsCertificates.issuer,
-                serialNumber: resourceMtlsCertificates.serialNumber,
-                fingerprint: resourceMtlsCertificates.fingerprint,
-                notBefore: resourceMtlsCertificates.notBefore,
-                notAfter: resourceMtlsCertificates.notAfter,
-                createdAt: resourceMtlsCertificates.createdAt
-            });
 
         return response<CreateResourceMtlsCertificateResponse>(res, {
-            data: { certificates: inserted },
+            data: {
+                certificates: inserted.map((c) => ({ ...c, resourceId }))
+            },
             success: true,
             error: false,
             message: "CA certificate added successfully",
             status: HttpCode.CREATED
         });
     } catch (error) {
+        if (createHttpError.isHttpError(error)) {
+            return next(error);
+        }
         logger.error(error);
         return next(
             createHttpError(HttpCode.INTERNAL_SERVER_ERROR, "An error occurred")

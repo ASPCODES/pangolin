@@ -14,12 +14,11 @@ import {
     type SelectedRole
 } from "@app/components/roles-selector";
 import { UsersSelector } from "@app/components/users-selector";
-import { ResourceMtlsCertificatesCredenza } from "@app/components/ResourceMtlsCertificatesCredenza";
 import { Button } from "@app/components/ui/button";
 import { Form, FormField } from "@app/components/ui/form";
 import { toast } from "@app/hooks/useToast";
 import { useEnvContext } from "@app/hooks/useEnvContext";
-import { useResourceMtls } from "@app/hooks/useResourceMtls";
+import { usePolicyMtls } from "@app/hooks/usePolicyMtls";
 import { createApiClient, formatAxiosError } from "@app/lib/api";
 import { getUserDisplayName } from "@app/lib/getUserDisplayName";
 import { resourceQueries } from "@app/lib/queries";
@@ -33,13 +32,7 @@ import type { AxiosResponse } from "axios";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toUnicode } from "punycode";
-import {
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState
-} from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { createPolicySchema } from ".";
 import {
@@ -50,6 +43,7 @@ import {
 } from "./PolicyAuthMethodCredenzas";
 import { PolicyAuthOtherMethodsSection } from "./PolicyAuthOtherMethodsSection";
 import { PolicyAuthSsoSection } from "./PolicyAuthSsoSection";
+import { PolicyMtlsCertificatesCredenza } from "./PolicyMtlsCertificatesCredenza";
 import type { PolicyAuthMethodId } from "./policy-auth-method-id";
 import { SharedPolicyResourceNotice } from "./SharedPolicyResourceNotice";
 import z from "zod";
@@ -259,9 +253,7 @@ export function PolicyAuthStackSectionEdit({
     const [editingMethod, setEditingMethod] =
         useState<PolicyAuthMethodId | null>(null);
 
-    const mtls = useResourceMtls();
-    // mTLS is resource-level, so it stays editable when the policy is shared.
-    const mtlsReadonly = readonly;
+    const mtls = usePolicyMtls();
     const canSaveMtls =
         mtls.isDirty && !(mtls.enabled && !mtls.hasCertificates);
 
@@ -513,8 +505,7 @@ export function PolicyAuthStackSectionEdit({
                 }),
                 api.post(`/resource/${resourceId}/users`, {
                     userIds: currentResourceUserIds
-                }),
-                ...(canSaveMtls ? [mtls.save()] : [])
+                })
             ]);
 
             toast({
@@ -725,7 +716,7 @@ export function PolicyAuthStackSectionEdit({
                                                   certificateCount:
                                                       mtls.certificates.length,
                                                   sslEnabled: mtls.sslEnabled,
-                                                  disabled: mtlsReadonly,
+                                                  disabled: authReadonly,
                                                   onConfigure: () =>
                                                       openMethodEditor("mtls"),
                                                   onToggle: (active) =>
@@ -824,7 +815,7 @@ export function PolicyAuthStackSectionEdit({
                                 />
 
                                 {mtls.supported && (
-                                    <ResourceMtlsCertificatesCredenza
+                                    <PolicyMtlsCertificatesCredenza
                                         open={editingMethod === "mtls"}
                                         onOpenChange={(open) => {
                                             if (open) return;
@@ -834,8 +825,14 @@ export function PolicyAuthStackSectionEdit({
                                                 mtls.setEnabled(false);
                                             }
                                         }}
+                                        resourcePolicyId={
+                                            policy.resourcePolicyId
+                                        }
                                         certificates={mtls.certificates}
                                         isLoading={mtls.isLoadingCertificates}
+                                        onMtlsDisabled={() =>
+                                            updatePolicy({ mtlsEnabled: false })
+                                        }
                                     />
                                 )}
                             </>
