@@ -33,6 +33,11 @@ import { useRef, useState } from "react";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EXPIRES_SOON_MS = 30 * DAY_MS;
 
+export type MtlsCertificateListItem = Pick<
+    ListResourcePolicyMtlsCertificatesResponse["certificates"][number],
+    "mtlsCertificateId" | "name" | "subject" | "issuer" | "notAfter"
+>;
+
 type PolicyMtlsCertificatesCredenzaProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -43,24 +48,16 @@ type PolicyMtlsCertificatesCredenzaProps = {
     onMtlsDisabled: () => void;
 };
 
+/** Manages the trusted CAs of an existing policy through the API. */
 export function PolicyMtlsCertificatesCredenza({
-    open,
-    onOpenChange,
     resourcePolicyId,
-    certificates,
-    isLoading,
-    onMtlsDisabled
+    onMtlsDisabled,
+    ...props
 }: PolicyMtlsCertificatesCredenzaProps) {
     const t = useTranslations();
     const { env } = useEnvContext();
     const api = createApiClient({ env });
     const queryClient = useQueryClient();
-
-    const [name, setName] = useState("");
-    const [pem, setPem] = useState("");
-    const [adding, setAdding] = useState(false);
-    const [removingId, setRemovingId] = useState<number | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     async function invalidateCertificates() {
         await queryClient.invalidateQueries(
@@ -68,34 +65,20 @@ export function PolicyMtlsCertificatesCredenza({
         );
     }
 
-    async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        e.target.value = "";
-        if (!file) return;
-        const text = await file.text();
-        setPem((prev) => (prev.trim() ? `${prev.trim()}\n${text}` : text));
-        if (!name && certificates.length === 0) {
-            setName(file.name.replace(/\.(pem|crt|cer|ca-bundle)$/i, ""));
-        }
-    }
-
-    async function onAddCertificate() {
-        if (!pem.trim()) return;
-        setAdding(true);
+    async function onAdd(pem: string, name: string | null) {
         try {
             await api.put<
                 AxiosResponse<CreateResourcePolicyMtlsCertificateResponse>
             >(`/resource-policy/${resourcePolicyId}/mtls/certificate`, {
                 certificate: pem,
-                ...(name.trim() ? { name: name.trim() } : {})
+                ...(name ? { name } : {})
             });
-            setPem("");
-            setName("");
             await invalidateCertificates();
             toast({
                 title: t("mtlsCertificateAdded"),
                 description: t("mtlsCertificateAddedDescription")
             });
+            return true;
         } catch (e) {
             toast({
                 variant: "destructive",
@@ -105,13 +88,11 @@ export function PolicyMtlsCertificatesCredenza({
                     t("mtlsCertificateErrorAddDescription")
                 )
             });
-        } finally {
-            setAdding(false);
+            return false;
         }
     }
 
-    async function onRemoveCertificate(mtlsCertificateId: number) {
-        setRemovingId(mtlsCertificateId);
+    async function onRemove(mtlsCertificateId: number) {
         try {
             const res = await api.delete<
                 AxiosResponse<DeleteResourcePolicyMtlsCertificateResponse>
@@ -138,6 +119,72 @@ export function PolicyMtlsCertificatesCredenza({
                     t("mtlsCertificateErrorRemoveDescription")
                 )
             });
+        }
+    }
+
+    return (
+        <MtlsCertificatesCredenza
+            {...props}
+            onAdd={onAdd}
+            onRemove={onRemove}
+        />
+    );
+}
+
+type MtlsCertificatesCredenzaProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    certificates: MtlsCertificateListItem[];
+    isLoading: boolean;
+    // resolves true when the certificate was added and the inputs can reset
+    onAdd: (pem: string, name: string | null) => Promise<boolean>;
+    onRemove: (mtlsCertificateId: number) => Promise<void>;
+};
+
+export function MtlsCertificatesCredenza({
+    open,
+    onOpenChange,
+    certificates,
+    isLoading,
+    onAdd,
+    onRemove
+}: MtlsCertificatesCredenzaProps) {
+    const t = useTranslations();
+
+    const [name, setName] = useState("");
+    const [pem, setPem] = useState("");
+    const [adding, setAdding] = useState(false);
+    const [removingId, setRemovingId] = useState<number | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+        const text = await file.text();
+        setPem((prev) => (prev.trim() ? `${prev.trim()}\n${text}` : text));
+        if (!name && certificates.length === 0) {
+            setName(file.name.replace(/\.(pem|crt|cer|ca-bundle)$/i, ""));
+        }
+    }
+
+    async function onAddCertificate() {
+        if (!pem.trim()) return;
+        setAdding(true);
+        try {
+            if (await onAdd(pem, name.trim() || null)) {
+                setPem("");
+                setName("");
+            }
+        } finally {
+            setAdding(false);
+        }
+    }
+
+    async function onRemoveCertificate(mtlsCertificateId: number) {
+        setRemovingId(mtlsCertificateId);
+        try {
+            await onRemove(mtlsCertificateId);
         } finally {
             setRemovingId(null);
         }
