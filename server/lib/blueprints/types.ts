@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { portRangeStringSchema } from "@server/lib/ip";
 import { MaintenanceSchema } from "#dynamic/lib/blueprints/MaintenanceSchema";
 import { MtlsSchema } from "#dynamic/lib/blueprints/MtlsSchema";
+import { resourceModeSupportsMtls } from "@server/lib/mtlsModes";
 import { isValidRegionId } from "@server/db/regions";
 import { isValidHttpMethodList } from "@server/lib/validators";
 import { wildcardSubdomainSchema } from "@server/lib/schemas";
@@ -481,11 +482,11 @@ export const PublicResourceSchema = z
                 return true;
             }
 
-            return (resource.mode ?? resource.protocol) === "http";
+            return resourceModeSupportsMtls(resource.mode ?? resource.protocol);
         },
         {
             path: ["auth", "mtls"],
-            error: "mTLS is only supported when mode is 'http'"
+            error: "mTLS is only supported when mode is 'http', 'ssh', 'rdp', 'vnc' or 'inference'"
         }
     )
     .refine(
