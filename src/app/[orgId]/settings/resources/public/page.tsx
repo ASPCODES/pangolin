@@ -99,6 +99,7 @@ export default async function ProxyResourcesPage(
                     resource.pincodeId !== null ||
                     resource.passwordId !== null ||
                     resource.whitelist ||
+                    resource.mtls ||
                     resource.headerAuthId
                   ? "protected"
                   : "not_protected",

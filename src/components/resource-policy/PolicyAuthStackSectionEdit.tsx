@@ -454,15 +454,22 @@ export function PolicyAuthStackSectionEdit({
 
                 updatePolicy(policyUpdates);
 
+                // Traefik only enforces mTLS with a trusted CA and SSL.
+                const mtlsEnforced =
+                    mtls.supported &&
+                    mtls.enabled &&
+                    mtls.hasCertificates &&
+                    mtls.sslEnabled;
                 resourceContext?.updateAuthInfo(
                     isInferenceResource
-                        ? { sso: true }
+                        ? { sso: true, mtls: mtlsEnforced }
                         : {
                               sso: payload.sso,
                               whitelist: payload.emailWhitelistEnabled,
                               password: passcodeOnServerRef.current,
                               pincode: pincodeOnServerRef.current,
-                              headerAuth: headerAuthOnServerRef.current
+                              headerAuth: headerAuthOnServerRef.current,
+                              mtls: mtlsEnforced
                           }
                 );
 
@@ -831,9 +838,12 @@ export function PolicyAuthStackSectionEdit({
                                 resourcePolicyId={policy.resourcePolicyId}
                                 certificates={mtls.certificates}
                                 isLoading={mtls.isLoadingCertificates}
-                                onMtlsDisabled={() =>
-                                    updatePolicy({ mtlsEnabled: false })
-                                }
+                                onMtlsDisabled={() => {
+                                    updatePolicy({ mtlsEnabled: false });
+                                    resourceContext?.updateAuthInfo({
+                                        mtls: false
+                                    });
+                                }}
                             />
                         )}
                     </SettingsSectionBody>
