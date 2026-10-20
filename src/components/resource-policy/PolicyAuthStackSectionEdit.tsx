@@ -14,10 +14,12 @@ import {
     type SelectedRole
 } from "@app/components/roles-selector";
 import { UsersSelector } from "@app/components/users-selector";
+import { ResourceMtlsCertificatesCredenza } from "@app/components/ResourceMtlsCertificatesCredenza";
 import { Button } from "@app/components/ui/button";
 import { Form, FormField } from "@app/components/ui/form";
 import { toast } from "@app/hooks/useToast";
 import { useEnvContext } from "@app/hooks/useEnvContext";
+import { useResourceMtls } from "@app/hooks/useResourceMtls";
 import { createApiClient, formatAxiosError } from "@app/lib/api";
 import { getUserDisplayName } from "@app/lib/getUserDisplayName";
 import { resourceQueries } from "@app/lib/queries";
@@ -258,6 +260,12 @@ export function PolicyAuthStackSectionEdit({
     const [editingMethod, setEditingMethod] =
         useState<PolicyAuthMethodId | null>(null);
 
+    const mtls = useResourceMtls();
+    // mTLS is resource-level, so it stays editable when the policy is shared.
+    const mtlsReadonly = readonly;
+    const canSaveMtls =
+        mtls.isDirty && !(mtls.enabled && !mtls.hasCertificates);
+
     const sso = useWatch({ control: form.control, name: "sso" });
     const skipToIdpId = useWatch({
         control: form.control,
@@ -414,6 +422,10 @@ export function PolicyAuthStackSectionEdit({
                     .catch(handleError)
             );
             policyUpdates.emailWhitelistEnabled = payload.emailWhitelistEnabled;
+
+            if (canSaveMtls) {
+                requests.push(mtls.save().catch(handleError));
+            }
         }
 
         try {
@@ -488,7 +500,8 @@ export function PolicyAuthStackSectionEdit({
                 }),
                 api.post(`/resource/${resourceId}/users`, {
                     userIds: currentResourceUserIds
-                })
+                }),
+                ...(canSaveMtls ? [mtls.save()] : [])
             ]);
 
             toast({
@@ -692,6 +705,32 @@ export function PolicyAuthStackSectionEdit({
                                             }
                                         )
                                     }
+                                    mtls={
+                                        mtls.supported
+                                            ? {
+                                                  active: mtls.enabled,
+                                                  certificateCount:
+                                                      mtls.certificates.length,
+                                                  sslEnabled: mtls.sslEnabled,
+                                                  disabled: mtlsReadonly,
+                                                  onConfigure: () =>
+                                                      openMethodEditor("mtls"),
+                                                  onToggle: (active) =>
+                                                      handleToggle(
+                                                          "mtls",
+                                                          active,
+                                                          () =>
+                                                              mtls.setEnabled(
+                                                                  false
+                                                              ),
+                                                          () =>
+                                                              mtls.setEnabled(
+                                                                  true
+                                                              )
+                                                      )
+                                              }
+                                            : undefined
+                                    }
                                 />
                             )}
                         </SettingsSectionForm>
@@ -770,6 +809,22 @@ export function PolicyAuthStackSectionEdit({
                                         setHeaderAuthActive(true);
                                     }}
                                 />
+
+                                {mtls.supported && (
+                                    <ResourceMtlsCertificatesCredenza
+                                        open={editingMethod === "mtls"}
+                                        onOpenChange={(open) => {
+                                            if (open) return;
+                                            closeCredenza();
+                                            // mTLS can't be enabled without a trusted CA.
+                                            if (!mtls.hasCertificates) {
+                                                mtls.setEnabled(false);
+                                            }
+                                        }}
+                                        certificates={mtls.certificates}
+                                        isLoading={mtls.isLoadingCertificates}
+                                    />
+                                )}
                             </>
                         )}
                     </SettingsSectionBody>

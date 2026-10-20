@@ -13,6 +13,7 @@ import type { PolicyAuthMethodId } from "./policy-auth-method-id";
 import {
     getEmailWhitelistSummary,
     getHeaderAuthSummary,
+    getMtlsSummary,
     getPasscodeSummary,
     getPincodeSummary
 } from "./policy-auth-summaries";
@@ -31,6 +32,14 @@ export type PolicyAuthOtherMethodsSectionProps = {
     onTogglePasscode: (active: boolean) => void;
     onToggleEmail: (active: boolean) => void;
     onToggleHeaderAuth: (active: boolean) => void;
+    mtls?: {
+        active: boolean;
+        certificateCount: number;
+        sslEnabled: boolean;
+        disabled?: boolean;
+        onConfigure: () => void;
+        onToggle: (active: boolean) => void;
+    };
 };
 
 export function PolicyAuthOtherMethodsSection({
@@ -46,7 +55,8 @@ export function PolicyAuthOtherMethodsSection({
     onTogglePincode,
     onTogglePasscode,
     onToggleEmail,
-    onToggleHeaderAuth
+    onToggleHeaderAuth,
+    mtls
 }: PolicyAuthOtherMethodsSectionProps) {
     const t = useTranslations();
 
@@ -113,6 +123,26 @@ export function PolicyAuthOtherMethodsSection({
                         onToggle={onToggleHeaderAuth}
                         disabled={disabled}
                     />
+
+                    {mtls && (
+                        <PolicyAuthMethodRow
+                            id="mtls"
+                            title={t("policyAuthMtlsTitle")}
+                            description={
+                                mtls.sslEnabled
+                                    ? t("policyAuthMtlsDescription")
+                                    : t("mtlsRequiresSsl")
+                            }
+                            summary={getMtlsSummary({
+                                t,
+                                count: mtls.certificateCount
+                            })}
+                            active={mtls.active}
+                            onConfigure={mtls.onConfigure}
+                            onToggle={mtls.onToggle}
+                            disabled={mtls.disabled || !mtls.sslEnabled}
+                        />
+                    )}
                 </div>
             </SettingsFormCell>
         </SettingsFormGrid>
