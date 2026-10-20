@@ -4,7 +4,16 @@ import { configFilePath1, configFilePath2 } from "./consts";
 import { z } from "zod";
 import stoi from "./stoi";
 import { getEnvOrYaml, readEnvOrFile } from "./getEnvOrYaml";
-import { DEFAULT_OFFLINE_THRESHOLDS } from "@server/lib/offlineThresholds";
+// type-only: offlineThresholds imports config, which imports this file
+import type { OfflineThresholds } from "@server/lib/offlineThresholds";
+
+export const DEFAULT_OFFLINE_THRESHOLDS: OfflineThresholds = {
+    checkIntervalMs: 30 * 1000, // 30 seconds
+    newtMs: 2 * 60 * 1000, // 2 minutes
+    newtWireguardMs: 8 * 60 * 1000, // 8 minutes
+    olmMs: 2 * 60 * 1000, // 2 minutes
+    remoteExitNodeMs: 2 * 60 * 1000 // 2 minutes
+};
 
 const portSchema = z.number().positive().gt(0).lte(65535);
 

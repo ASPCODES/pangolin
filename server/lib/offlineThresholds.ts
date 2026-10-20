@@ -13,14 +13,6 @@ export type OfflineThresholds = {
     remoteExitNodeMs: number;
 };
 
-export const DEFAULT_OFFLINE_THRESHOLDS: OfflineThresholds = {
-    checkIntervalMs: 30 * 1000, // 30 seconds
-    newtMs: 2 * 60 * 1000, // 2 minutes
-    newtWireguardMs: 8 * 60 * 1000, // 8 minutes
-    olmMs: 2 * 60 * 1000, // 2 minutes
-    remoteExitNodeMs: 2 * 60 * 1000 // 2 minutes
-};
-
 export function getOfflineThresholds(): OfflineThresholds {
     const offlineChecker = config.getRawConfig().offline_checker;
 
