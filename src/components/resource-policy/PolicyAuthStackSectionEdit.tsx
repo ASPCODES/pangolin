@@ -34,7 +34,6 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toUnicode } from "punycode";
 import {
-    useActionState,
     useContext,
     useEffect,
     useMemo,
@@ -291,8 +290,22 @@ export function PolicyAuthStackSectionEdit({
         }
     }, [isInferenceResource, form]);
 
-    const [, formAction, isSubmitting] = useActionState(onSubmit, null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSavingOverlay, setIsSavingOverlay] = useState(false);
+
+    // Not using <form action>: React 19 resets the form after the action
+    // completes, and Radix Switch listens for that reset and flips controlled
+    // switches (e.g. SSO) back to their initial value.
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            await onSubmit();
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
 
     async function onSubmit() {
         if (readonly && !isResourceOverlay) return;
@@ -550,7 +563,7 @@ export function PolicyAuthStackSectionEdit({
 
     return (
         <Form {...form}>
-            <form action={formAction}>
+            <form onSubmit={handleSubmit}>
                 <SettingsSection>
                     <SettingsSectionHeader>
                         <SettingsSectionTitle>
