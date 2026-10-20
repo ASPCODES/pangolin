@@ -488,6 +488,7 @@ export async function getTraefikConfig(
             wildcard: row.resourceWildcard,
             ssl: attachedToResource ? !!row.resourceSsl : row.ssl,
             attachedTo: attachedToResource ? "resource" : "domain",
+            resourceId: row.resourceId,
             matchPath: row.matchPath,
             pathMatchType: row.pathMatchType,
             priority: row.priority,
@@ -547,7 +548,8 @@ export async function getTraefikConfig(
     }
 
     // Trusted client-CA certificates for resources that require mTLS: HTTP,
-    // browser-gateway (SSH/RDP/VNC) and inference resources served over SSL.
+    // browser-gateway (SSH/RDP/VNC) and inference resources served over SSL,
+    // and the redirects attached to them.
     const mtlsCaCertsByResource = await getMtlsCaCertificatesByResource([
         ...[...resourcesMap.values()]
             .filter((r) => r.mode === "http" && r.ssl)
@@ -555,7 +557,12 @@ export async function getTraefikConfig(
         ...[...browserGatewayResourcesMap.values()]
             .filter((r) => r.ssl)
             .map((r) => r.resourceId),
-        ...inferenceResources.filter((r) => r.ssl).map((r) => r.resourceId)
+        ...inferenceResources.filter((r) => r.ssl).map((r) => r.resourceId),
+        // redirects attached to a resource share its host, and are emitted
+        // even on exit nodes that don't serve the resource itself
+        ...redirectRoutes
+            .filter((r) => r.attachedTo === "resource" && r.ssl)
+            .map((r) => r.resourceId!)
     ]);
 
     const traefikRateLimit = config.getRawConfig().traefik.rate_limit;
@@ -920,6 +927,7 @@ export async function getTraefikConfig(
     buildRedirectConfig({
         config_output,
         redirects: redirectRoutes,
+        mtlsCaCertsByResource,
         badgerMiddlewareName,
         redirectHttpsMiddlewareName,
         resolveTls: (redirect) => {
