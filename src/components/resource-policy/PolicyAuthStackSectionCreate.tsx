@@ -11,7 +11,6 @@ import {
 import { RolesSelector } from "@app/components/roles-selector";
 import { UsersSelector } from "@app/components/users-selector";
 import { FormField } from "@app/components/ui/form";
-import { useEnvContext } from "@app/hooks/useEnvContext";
 import { toast } from "@app/hooks/useToast";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -45,7 +44,6 @@ export function PolicyAuthStackSectionCreate({
     emailEnabled
 }: PolicyAuthStackSectionCreateProps) {
     const t = useTranslations();
-    const { env } = useEnvContext();
     const [editingMethod, setEditingMethod] =
         useState<PolicyAuthMethodId | null>(null);
 
@@ -80,7 +78,6 @@ export function PolicyAuthStackSectionCreate({
     const passcodeActive = Boolean(password);
     const pinActive = Boolean(pincode);
     const headerAuthActive = Boolean(headerAuth);
-    const mtlsSupported = !env.flags.disableEnterpriseFeatures;
 
     const closeCredenza = () => setEditingMethod(null);
 
@@ -247,34 +244,26 @@ export function PolicyAuthStackSectionCreate({
                                 parentForm.setValue("headerAuth", null)
                             )
                         }
-                        mtls={
-                            mtlsSupported
-                                ? {
-                                      active: Boolean(mtlsEnabled),
-                                      certificateCount: mtlsCertificates.length,
-                                      // applies to the policy's resources
-                                      // that have SSL enabled
-                                      sslEnabled: true,
-                                      onConfigure: () =>
-                                          setEditingMethod("mtls"),
-                                      onToggle: (active) =>
-                                          handleToggle(
-                                              "mtls",
-                                              active,
-                                              () =>
-                                                  parentForm.setValue(
-                                                      "mtlsEnabled",
-                                                      false
-                                                  ),
-                                              () =>
-                                                  parentForm.setValue(
-                                                      "mtlsEnabled",
-                                                      true
-                                                  )
-                                          )
-                                  }
-                                : undefined
-                        }
+                        mtls={{
+                            active: Boolean(mtlsEnabled),
+                            certificateCount: mtlsCertificates.length,
+                            // applies to the policy's resources
+                            // that have SSL enabled
+                            sslEnabled: true,
+                            onConfigure: () => setEditingMethod("mtls"),
+                            onToggle: (active) =>
+                                handleToggle(
+                                    "mtls",
+                                    active,
+                                    () =>
+                                        parentForm.setValue(
+                                            "mtlsEnabled",
+                                            false
+                                        ),
+                                    () =>
+                                        parentForm.setValue("mtlsEnabled", true)
+                                )
+                        }}
                     />
                 </SettingsSectionForm>
 
@@ -328,33 +317,31 @@ export function PolicyAuthStackSectionCreate({
                     }}
                 />
 
-                {mtlsSupported && (
-                    <MtlsCertificatesCredenza
-                        open={editingMethod === "mtls"}
-                        onOpenChange={(open) => {
-                            if (open) return;
-                            closeCredenza();
-                            // mTLS can't be enabled without a trusted CA.
-                            if (mtlsCertificates.length === 0) {
-                                parentForm.setValue("mtlsEnabled", false);
-                            }
-                        }}
-                        certificates={mtlsCertificates.map((c, index) => ({
-                            mtlsCertificateId: c.mtlsCertificateId,
-                            name:
-                                c.name ??
-                                t("mtlsPendingCertificate", {
-                                    number: index + 1
-                                }),
-                            subject: null,
-                            issuer: null,
-                            notAfter: null
-                        }))}
-                        isLoading={false}
-                        onAdd={addMtlsCertificates}
-                        onRemove={removeMtlsCertificate}
-                    />
-                )}
+                <MtlsCertificatesCredenza
+                    open={editingMethod === "mtls"}
+                    onOpenChange={(open) => {
+                        if (open) return;
+                        closeCredenza();
+                        // mTLS can't be enabled without a trusted CA.
+                        if (mtlsCertificates.length === 0) {
+                            parentForm.setValue("mtlsEnabled", false);
+                        }
+                    }}
+                    certificates={mtlsCertificates.map((c, index) => ({
+                        mtlsCertificateId: c.mtlsCertificateId,
+                        name:
+                            c.name ??
+                            t("mtlsPendingCertificate", {
+                                number: index + 1
+                            }),
+                        subject: null,
+                        issuer: null,
+                        notAfter: null
+                    }))}
+                    isLoading={false}
+                    onAdd={addMtlsCertificates}
+                    onRemove={removeMtlsCertificate}
+                />
             </SettingsSectionBody>
         </SettingsSection>
     );
