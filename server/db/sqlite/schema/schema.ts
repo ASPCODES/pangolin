@@ -843,6 +843,7 @@ export const olms = sqliteTable(
         dateCreated: text("dateCreated").notNull(),
         version: text("version"),
         agent: text("agent"),
+        agentVersion: text("agentVersion"),
         name: text("name"),
         clientId: integer("clientId").references(() => clients.clientId, {
             // we will switch this depending on the current org it wants to connect to
