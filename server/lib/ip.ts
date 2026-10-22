@@ -492,8 +492,8 @@ export async function getNextAvailableOrgSubnet(): Promise<{
     }
 }
 
-const remoteSubnetCidrSchema = z.union([z.cidrv4(), z.cidrv6()]);
-const remoteSubnetIpSchema = z.union([z.ipv4(), z.ipv6()]);
+const cidrSchema = z.union([z.cidrv4(), z.cidrv6()]);
+const ipSchema = z.union([z.ipv4(), z.ipv6()]);
 
 export function generateRemoteSubnets(
     allSiteResources: SiteResource[]
@@ -506,16 +506,12 @@ export function generateRemoteSubnets(
             // we purposely filter out the gateway resource here because we add it manually on the client
             if (sr.mode === "cidr") {
                 // check if its a valid CIDR using zod
-                const parseResult = remoteSubnetCidrSchema.safeParse(
-                    sr.destination
-                );
+                const parseResult = cidrSchema.safeParse(sr.destination);
                 return parseResult.success;
             }
             if (sr.mode === "host" || sr.mode === "ssh") {
                 // check if its a valid IP using zod
-                const parseResult = remoteSubnetIpSchema.safeParse(
-                    sr.destination
-                );
+                const parseResult = ipSchema.safeParse(sr.destination);
                 return parseResult.success;
             }
             return false;
@@ -603,7 +599,6 @@ export function generateSubnetProxyTargets(
         if (siteResource.mode == "host" || siteResource.mode == "ssh") {
             let destination = siteResource.destination;
             // check if this is a valid ip
-            const ipSchema = z.union([z.ipv4(), z.ipv6()]);
             if (ipSchema.safeParse(destination).success) {
                 destination = `${destination}/32`;
 
@@ -790,7 +785,6 @@ export async function generateSubnetProxyTargetV2(
     if (siteResource.mode == "host" || siteResource.mode == "ssh") {
         let destination = siteResource.destination;
         // check if this is a valid ip
-        const ipSchema = z.union([z.ipv4(), z.ipv6()]);
         if (ipSchema.safeParse(destination).success) {
             destination = `${destination}/32`;
 
@@ -825,7 +819,6 @@ export async function generateSubnetProxyTargetV2(
     } else if (siteResource.mode == "http") {
         let destination = siteResource.destination;
         // check if this is a valid ip
-        const ipSchema = z.union([z.ipv4(), z.ipv6()]);
         if (ipSchema.safeParse(destination).success) {
             destination = `${destination}/32`;
         }
