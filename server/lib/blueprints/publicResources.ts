@@ -109,7 +109,8 @@ export async function updatePublicResources(
 
         async function createTarget( // reusable function to create a target
             resourceId: number,
-            targetData: TargetData
+            targetData: TargetData,
+            resourceName: string
         ) {
             const targetSiteId = targetData.site;
             let site: Partial<Site> | undefined;
@@ -197,10 +198,14 @@ export async function updatePublicResources(
                 ? JSON.stringify(healthcheckData.headers)
                 : null;
 
+            const healthCheckName =
+                healthcheckData?.name ||
+                `Resource ${resourceName} - ${targetData.hostname}:${targetData.port}`;
+
             const [newHealthcheck] = await trx
                 .insert(targetHealthCheck)
                 .values({
-                    name: `${targetData.hostname}:${targetData.port}`,
+                    name: healthCheckName,
                     siteId: site.siteId!,
                     targetId: newTarget.targetId,
                     orgId: orgId,
@@ -898,9 +903,14 @@ export async function updatePublicResources(
                         ? JSON.stringify(healthcheckData.headers)
                         : null;
 
+                    const healthCheckName =
+                        healthcheckData?.name ||
+                        `Resource ${existingResource.name} - ${targetData.hostname}:${targetData.port}`;
+
                     const [newHealthcheck] = await trx
                         .update(targetHealthCheck)
                         .set({
+                            name: healthCheckName,
                             hcEnabled: healthcheckData?.enabled || false,
                             hcPath: healthcheckData?.path,
                             hcScheme: healthcheckData?.scheme,
@@ -963,7 +973,11 @@ export async function updatePublicResources(
                         );
                     }
                 } else {
-                    await createTarget(existingResource.resourceId, targetData);
+                    await createTarget(
+                        existingResource.resourceId,
+                        targetData,
+                        existingResource.name
+                    );
                 }
             }
 
@@ -1495,7 +1509,11 @@ export async function updatePublicResources(
                     // If targetData is null or an empty object, we can skip it
                     continue;
                 }
-                await createTarget(newResource.resourceId, targetData);
+                await createTarget(
+                    newResource.resourceId,
+                    targetData,
+                    newResource.name
+                );
             }
 
             await usageService.add(orgId, LimitId.PUBLIC_RESOURCES, 1, trx);
@@ -2156,6 +2174,7 @@ function checkIfHealthcheckChanged(
     if (existing && !incoming) return true;
     if (!existing || !incoming) return false;
 
+    if (existing.name !== incoming.name) return true;
     if (existing.hcEnabled !== incoming.hcEnabled) return true;
     if (existing.hcPath !== incoming.hcPath) return true;
     if (existing.hcScheme !== incoming.hcScheme) return true;
