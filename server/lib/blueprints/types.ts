@@ -59,6 +59,7 @@ const healthCheckHostnameSchema = z
     );
 
 export const TargetHealthCheckSchema = z.object({
+    name: z.string().optional(),
     hostname: healthCheckHostnameSchema,
     port: z.int().min(1).max(65535),
     enabled: z.boolean().optional().default(true),
