@@ -492,6 +492,9 @@ export async function getNextAvailableOrgSubnet(): Promise<{
     }
 }
 
+const remoteSubnetCidrSchema = z.union([z.cidrv4(), z.cidrv6()]);
+const remoteSubnetIpSchema = z.union([z.ipv4(), z.ipv6()]);
+
 export function generateRemoteSubnets(
     allSiteResources: SiteResource[]
 ): string[] {
@@ -503,14 +506,16 @@ export function generateRemoteSubnets(
             // we purposely filter out the gateway resource here because we add it manually on the client
             if (sr.mode === "cidr") {
                 // check if its a valid CIDR using zod
-                const cidrSchema = z.union([z.cidrv4(), z.cidrv6()]);
-                const parseResult = cidrSchema.safeParse(sr.destination);
+                const parseResult = remoteSubnetCidrSchema.safeParse(
+                    sr.destination
+                );
                 return parseResult.success;
             }
             if (sr.mode === "host" || sr.mode === "ssh") {
                 // check if its a valid IP using zod
-                const ipSchema = z.union([z.ipv4(), z.ipv6()]);
-                const parseResult = ipSchema.safeParse(sr.destination);
+                const parseResult = remoteSubnetIpSchema.safeParse(
+                    sr.destination
+                );
                 return parseResult.success;
             }
             return false;
